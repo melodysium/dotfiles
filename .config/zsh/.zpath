@@ -1,0 +1,91 @@
+#!/bin/zsh
+# 6) .zpath: always sourced; for non-login shells, sourced early from zshenv; for others, in zprofile, after system files sourced.
+# reminder: help_zsh_dotfiles.md
+
+# enable to debug slow startup times
+#echo "start .zpath"
+#set -x
+
+# has this file been run in context already?
+if [[ -n "$ZPATH_HAS_ALREADY_RUN" ]]; then
+  # echo ".zpath already run; returning"
+  return
+else
+  export ZPATH_HAS_ALREADY_RUN=true
+fi
+
+# homebrew setup
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# load sheldon package manager
+eval "$(sheldon source)"
+
+# set JJ config dir (allows multiple files, different per device)
+export JJ_CONFIG="$HOME/.config/jj/configs"
+
+# Created by `pipx` on 2022-05-27 20:25:18. Moved from .zshrc and .zprofile to .zshenv 2025-08-20.
+export PATH="$PATH:$HOME/.local/bin"
+# Created manually on 2025-08-28 trying to resolve "Found a space in pipx home path." warnings
+export PIPX_HOME="$HOME/.local/pipx"
+export PIPX_SHARED_LIBS="$HOME/.local/pipx/shared"
+export PIPX_LOCAL_VENVS="$HOME/.local/pipx/venvs"
+export PIPX_LOG_DIR="$HOME/.local/pipx/logs"
+export PIPX_TRASH_DIR="$HOME/.local/pipx/.trash"
+
+# put python3 from homebrew in the path
+#export PATH="/opt/homebrew/opt/python@3.9/bin:$PATH"
+
+# use homebrew's coreutils instead of default ones
+#PATH="$(brew --prefix)/opt/coreutils/libexec/gnubin:$PATH"
+# Commenting out 2022-06-22 as nothing is broken for me rn
+# Context: https://bitbucket.org/inindca/relate-team-ops/pull-requests/71/no-jira-add-troubleshooting-page
+
+# custom git commands like git diff-commit
+export PATH="$PATH:$HOME/my-git-custom-commands"
+
+# `subl` binary
+export PATH="$PATH:/Applications/Sublime Text.app/Contents/SharedSupport/bin"
+
+# cargo setup
+. "$HOME/.cargo/env"
+
+# texlive
+export PATH="/usr/local/texlive/2025/bin/universal-darwin:$PATH"
+
+# Pyenv setup
+#export PYENV_ROOT="$HOME/.pyenv"
+#eval "$(pyenv init -)"
+
+# 2026-02-27: switch to lazy-loading nvm via lazyload zsh plugin
+export NVM_DIR="$HOME/.nvm"
+lazyload nvm npm node -- 'source "$NVM_DIR/nvm.sh"'
+
+# jenv
+local jenv_shims=(~/.jenv/shims/*(N:t))
+lazyload jenv mvn $jenv_shims -- 'eval "$(jenv init -)"'
+
+# Preferred editor for local and remote sessions
+# export EDITOR=/usr/bin/vim # 2026-02-27 goodbye vim, you've served me well
+if [[ -n $SSH_CONNECTION ]]; then
+  export EDITOR='vim'
+else
+  export EDITOR="code-term-editor" # defined in .local/bin/code-term-editor
+  vim () { "echo 'stop typing this, dummy. use \`e $@\` instead." }
+fi
+
+# 2025-10-28: workaround uv-installed python being unable to use the 'venv' module
+# https://github.com/astral-sh/uv/issues/8821#issuecomment-2710003787
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+export PATH=$(dirname $(realpath $(which python3))):$PATH
+
+export ACTIVATE_PERSONAL_CONFIG=".activate-personal-config"
+
+export LOCAL_ZPATH="${ZDOTDIR}/.zpath.local"
+if [[ -f $LOCAL_ZPATH ]]; then
+  source "$LOCAL_ZPATH"
+fi
+
+export GDRIVE="$HOME/Library/CloudStorage/GoogleDrive-pikablue107@gmail.com"
+
+#set +x
+#echo "end .zpath"
