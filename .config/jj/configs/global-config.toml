@@ -1,0 +1,51 @@
+#:schema https://docs.jj-vcs.dev/latest/config-schema.json
+
+[user]
+name = "melodysium"
+email = "melodysium@gmail.com"
+
+[ui]
+diff-formatter = "difft"
+pager = "bat"
+diff-editor = "meld-3-emptybase"
+merge-editor = "idea"
+
+[templates]
+new_description = '''
+if(parents.len() > 1,
+  "Merge " ++ if(
+    parents.first().bookmarks(),
+    parents.first().bookmarks().first().name(),
+    parents.first().change_id().shortest(8)
+  ) ++ " into " ++ parents.skip(1).map(|p| if(
+    p.bookmarks(),
+    p.bookmarks().first().name(),
+    p.change_id().shortest(8)
+  )).join(", ") ++ "\n",
+  ""
+)
+'''
+draft_commit_description = '''
+concat(
+    builtin_draft_commit_description,
+    "\nJJ: ignore-rest\n# ------------------------ >8 ------------------------\n",
+    diff.git(),
+)
+'''
+
+[revset-aliases]
+'closest_bookmark(to)' = 'heads(::to & bookmarks())'
+'closest_bookmark_nontrunk(to)' = 'heads(::to & bookmarks() & ~trunk())'
+'immutable_heads()' = 'present(trunk()) | untracked_remote_bookmarks()'
+# default: 'immutable_heads()" = "present(trunk()) | tags() | untracked_remote_bookmarks()'
+
+[revsets]
+bookmark-advance-from = 'closest_bookmark_nontrunk(to)'
+
+[remotes.origin]
+auto-track-bookmarks = "*"
+
+[merge-tools.meld-3-emptybase]
+program = "meld-3-emptybase" # shell script in .local/bin
+edit-args = ["$left", "$right", "$output"]
+
