@@ -1,0 +1,62 @@
+#!/bin/sh
+#
+# Filename:   prepare-commit-msg
+# Location:   .git/hooks/
+# Title:      Prefix Commit Msg with Jira Ticket
+#
+# Description:
+#   This is a git hook script that prefixes commit messages with ticket codes,
+#   in the format "ABCDEF-1234: (msg)" or "NO-JIRA: (msg)"
+#
+#   If the commit message already contains this prefix, skips this step.
+#   If the commit message already contains a different ticket,
+#     warns the user and aborts the commit.
+#   To skip this hook, set the environment variable
+#     SKIP_TICKET_HOOK to something (anything).
+#
+#   Tickets are identified from the start of the branch name, case insensitive.
+#   Uses the "prepare-commit-msg" Git hook to perform this behavior.
+
+# define the prefix template to use. %s will be filled with the ticket
+PREFIX_TEMPLATE="%s: "
+
+# collect the info we're given
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2 # unused
+SHA1=$3 #unused
+MESSAGE=$(/bin/cat $COMMIT_MSG_FILE)
+
+# If requested, skip this hook
+if [[ -n "$SKIP_TICKET_HOOK" ]]; then
+  exit 0
+fi
+
+# scrape the ticket name from the branch name
+# won't catch NO-JIRA
+TICKET=$(git rev-parse --abbrev-ref HEAD \
+  | tr "[:lower:]" "[:upper:]" \
+  | grep -Eo '^(\w+/)?(\w+[-_])([0-9]+|JIRA)' \
+  | grep -Eo '(\w+[-])([0-9]+|JIRA)')
+
+# if we can't figure out a ticket from the branch, don't touch the commit msg
+if [[ -z $TICKET ]]; then
+  exit 0
+fi
+# if the message already starts with this ticket, don't write a duplicate
+if [[ "$MESSAGE" == "$TICKET"* ]]; then
+  exit 0
+fi
+# if the message starts with a *different* ticket, print a warning
+MSG_TICKET=$(/bin/cat $COMMIT_MSG_FILE \
+  | tr "[:lower:]" "[:upper:]" \
+  | grep -Eo '^(\w+[-_])([0-9]+|JIRA)')
+if [[ -n "$MSG_TICKET" ]]; then
+  >&2 echo "WARNING: Detected a different ticket than capitalized branch name!"
+  >&2 echo 'Use `SKIP_TICKET_HOOK=true git commit` to bypass this hook.'
+  exit 1
+fi
+
+# create the new message
+NEW_MESSAGE=$(printf "${PREFIX_TEMPLATE}%s" "$TICKET" "$MESSAGE")
+# save new commit message
+echo "$NEW_MESSAGE" > $COMMIT_MSG_FILE

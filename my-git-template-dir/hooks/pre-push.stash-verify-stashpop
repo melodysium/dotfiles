@@ -1,0 +1,27 @@
+#!/bin/sh
+
+
+echo "Hello from pre-push! Ignore me with IGNORE_PRE_PUSH=true"
+[[ -n "$IGNORE_PRE_PUSH" ]] && exit 0
+
+# check if there's anything to stash first
+if git any-changes; then
+  # Stash everything to get a clean project with no WIP changes.
+  git stash --include-untracked
+  changes_stashed=true
+fi
+
+# Run a mvn validate to catch checkstyle & other frustrating errors locally.
+mvn_validate_out=$(mvn --color=always validate 2>&1)
+if [[ $? -ne 0 ]]; then
+  echo "$mvn_validate_out"
+  if [[ -n $changes_stashed ]]; then
+    echo "The previous working tree has been stashed; please fix this commit then unstash what you were working on."
+  fi
+  exit 1
+fi
+
+# Success; restore the user's tree
+if [[ -n $changes_stashed ]]; then
+  git stash pop
+fi

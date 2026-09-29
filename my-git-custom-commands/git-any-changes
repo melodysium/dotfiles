@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# credit to https://stackoverflow.com/questions/2657935/checking-for-a-dirty-index-or-untracked-files-with-git
+changes=""
+if ! git diff-index --quiet --cached HEAD --; then
+    changes="${changes}staged changes\n"
+elif ! git diff-files --quiet; then
+    changes="${changes}unstaged changes\n"
+elif [[ -n "$(git ls-files --exclude-standard --others)" ]]; then
+    changes="${changes}untracked files\n"
+fi
+
+if [[ -n "$changes" ]]; then
+    printf "$changes"
+    exit 0
+else
+    exit 1
+fi
