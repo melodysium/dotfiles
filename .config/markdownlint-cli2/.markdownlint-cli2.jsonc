@@ -1,0 +1,61 @@
+{
+    "config": {
+
+        // Description of all rules can be found here:
+        // https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+        // Example config file here:
+        // https://github.com/DavidAnson/markdownlint/blob/main/schema/.markdownlint.jsonc
+        // If you would like to add linting to your IDE as a plugin (VSCode, Sublime Text, [Neo]Vim), see https://github.com/DavidAnson/markdownlint#related.
+
+        // MD004/ul-style: Unordered list style
+        "MD004": false,
+
+        // MD007/ul-indent - Unordered list indentation
+        "MD007": {
+            // Spaces for indent (this is **required** by mkdocs)
+            "indent": 4
+        },
+
+        // MD013/line-length - Line length
+        "MD013": {
+            // Number of characters
+            "line_length": 180,
+            // Include code blocks
+            "code_blocks": false,
+            // Include tables
+            "tables": false,
+            // Include headings
+            "headings": false
+        },
+
+        // MD024/no-duplicate-heading/no-duplicate-header - Multiple headings with the same content
+        "MD024": {
+            // Only check sibling headings
+            "siblings_only": true
+        },
+
+        // MD030/list-marker-space - Spaces after list markers
+        // See https://cirosantilli.com/markdown-style-guide/#spaces-after-list-marker
+        "MD030": {
+            // Spaces for single-line unordered list items
+            "ul_single": 3,
+            // Spaces for single-line ordered list items
+            "ol_single": 2,
+
+            // Spaces for multi-line unordered list items
+            "ul_multi": 3,
+            // Spaces for multi-line ordered list items
+            "ol_multi": 2
+        },
+
+        // MD033/no-inline-html - Inline HTML
+        "MD033": {
+          // Allowed elements
+          "allowed_elements": ["br", "sup", "u"]
+        },
+
+        // MD046/code-block-style - Code block style (indented vs fenced)
+        // Disabled because it interfere with mkdocs blocks. Specifically with https://squidfunk.github.io/mkdocs-material/reference/admonitions/
+        "MD046": false
+    }
+}
