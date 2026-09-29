@@ -1,0 +1,66 @@
+#!/bin/sh
+#
+# Filename:   prepare-commit-msg
+# Location:   .git/hooks/
+# Title:      Add Jira Ticket in Commit Trailer
+#
+# Description:
+#   This is a git hook script that attaches a Jira commit to a commit message
+#   as a footer in the Git commit message, like so:
+#   Jira-Ticket: ABCDEF-1234
+#
+#   If the commit message already contains the Jira-Ticket footer, with the
+#     right ticket, do nothing.
+#   If the commit message already contains the Jira-Ticket footer with the
+#     wrong ticket, warns the user and aborts the commit.
+#   To skip this hook, set the environment variable
+#     SKIP_TICKET_HOOK to something (anything).
+#
+#   Tickets are identified from the start of the branch name, case insensitive.
+#   Uses the "prepare-commit-msg" Git hook to perform this behavior.
+
+# define the footer name
+FOOTER_NAME="Jira-Ticket"
+
+# collect the info we're given
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2 # unused
+SHA1=$3 #unused
+MESSAGE=$(/bin/cat $COMMIT_MSG_FILE)
+
+# If requested, skip this hook
+if [[ -n "$SKIP_TICKET_HOOK" ]]; then
+  exit 0
+fi
+
+# scrape the ticket name from the branch name
+# won't catch NO-JIRA
+TICKET=$(git rev-parse --abbrev-ref HEAD \
+  | tr "[:lower:]" "[:upper:]" \
+  | grep -Eo '^(\w+/)?(\w+[-_])([0-9]+|JIRA)' \
+  | grep -Eo '(\w+[-])([0-9]+|JIRA)')
+# compute the expected footer
+TICKET_FOOTER="${FOOTER_NAME}: ${TICKET}"
+
+# if we can't figure out a ticket from the branch, don't touch the commit msg
+if [[ -z $TICKET ]]; then
+  exit 0
+fi
+# if the message already contains the jira ticket footer, then do nothing
+if [[ "$MESSAGE" == *"$TICKET_FOOTER"* ]]; then
+  exit 0
+fi
+# if the message contains a *different* ticket, print a warning
+MSG_TICKET=$(/bin/cat $COMMIT_MSG_FILE \
+  | tr "[:lower:]" "[:upper:]" \
+  | grep -Eo '^(\w+[-_])([0-9]+|JIRA)')
+if [[ -n "$MSG_TICKET" ]]; then
+  >&2 echo "WARNING: Detected a different ticket than capitalized branch name!"
+  >&2 echo 'Use `SKIP_TICKET_HOOK=true git commit` to bypass this hook.'
+  exit 1
+fi
+
+# create the new message
+NEW_MESSAGE=$(printf "${MESSAGE}\n\n${TICKET_FOOTER}\n")
+# save new commit message
+echo "$NEW_MESSAGE" > $COMMIT_MSG_FILE

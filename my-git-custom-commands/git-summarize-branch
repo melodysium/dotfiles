@@ -1,0 +1,25 @@
+
+# parse args
+
+# if $1 has a value and it's not "--", save to $branchname
+if [  -n "$1" ] && [ "$1" != "--" ]; then
+    branchname="${1}"
+    shift
+else
+    branchname="HEAD"
+fi
+
+# if $1 is now "--", pop it. remaining args are passed to git log
+if [ -n "$1" ] && [ $1 = "--" ]; then
+    shift
+fi
+# TODO: if $@ has any values, keep them; otherwise, set to default of "--stat"
+
+# resolve default branch for this repo
+defaultbranch="$(git resolve-default-branch)"
+
+# print num of commits
+printf "%s commits ahead of %s\n\n" $(git log $defaultbranch..$branchname --oneline | wc -l) $defaultbranch
+
+# log all commits
+git --no-pager log $defaultbranch..$branchname --stat $@

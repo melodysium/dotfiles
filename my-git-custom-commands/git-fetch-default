@@ -1,0 +1,1 @@
+git resolve-default-branch | xargs -I{} sh -c "git fetch origin {}:{}"

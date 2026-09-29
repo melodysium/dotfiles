@@ -1,0 +1,31 @@
+#!/bin/sh
+
+msg="unstaged changes on $(git rev-parse --abbrev-ref HEAD)"
+# if we got a message, use it
+if [ $# -gt 0 ] && [ $1 = "-m" ]; then
+  msg="$2"
+fi
+
+# stash staged changes
+git stash push --staged -m "SCRIPT_TMP_STAGED"
+[ $? -eq 0 ] || exit 1 # if crash, abort
+
+# stash remaining changes
+git stash push -m "$msg"
+[ $? -eq 0 ] || exit 1 # if crash, abort
+
+# apply staged changes from staged
+git stash apply 1
+[ $? -eq 0 ] || exit 1 # if crash, abort
+# and re-add them to staged
+git add --all
+
+# confirm that we're good to drop the tmp stash
+#read -p "Good to drop staged stash? " -n 1 -r
+#echo    # move to a new line
+#if [[ ! $REPLY =~ ^[Yy] ]]; then
+#    exit 1
+#fi
+
+# drop the tmp stash
+git stash drop 1

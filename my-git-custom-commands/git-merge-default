@@ -1,0 +1,1 @@
+git fetch-default; git merge $(git resolve-default-branch)

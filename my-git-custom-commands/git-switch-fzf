@@ -1,0 +1,6 @@
+chosen_branch=$(git branch --all --sort=-committerdate $@ | fzf --ansi --preview '{ branchname="$( echo {} | tr -d "[:space:]\*")"; git summarize-branch $branchname -- --color }' | tr -d "[:space:]\*")
+if [[ -n "$chosen_branch" ]]; then
+    # for remote branches, strip the remote prefix to create a local tracking branch
+    chosen_branch="${chosen_branch##*/}"
+    git switch "$chosen_branch"
+fi

@@ -1,0 +1,28 @@
+#!/bin/sh
+# Credit to JesusFreke from StackOverflow:
+# https://stackoverflow.com/questions/3573410/what-is-the-shortest-way-to-swap-staged-and-unstaged-changes-in-git
+
+# first, go to the root of the git repo
+pushd `git rev-parse --show-toplevel`
+
+# write out a tree with only the stuff in staging
+INDEXTREE=`git write-tree`
+
+# now write out a tree with everything
+git add -A
+ALL=`git write-tree`
+
+# get back to a clean state with no changes, staged or otherwise
+git reset -q --hard
+git clean -fd
+
+# apply the changes that were originally staged, that we want to
+# be unstaged
+git checkout $INDEXTREE -- .
+git reset
+
+# apply the originally unstaged changes to the index
+git diff-tree -p $INDEXTREE $ALL | git apply --index --reject
+
+# return to the original folder
+popd

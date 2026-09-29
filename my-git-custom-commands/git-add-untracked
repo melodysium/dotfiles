@@ -1,0 +1,1 @@
+git add $(git ls-files --others --exclude-standard | fzf -m --header="use [Tab] to select, [Enter] to finish" --preview='cat {}')

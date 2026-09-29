@@ -1,0 +1,39 @@
+[user]
+	name = melodysium
+	email = melodysium@gmail.com
+[core]
+  excludesfile    = "~/.gitignore_global"
+  hooksPath       = "~/my-git-template-dir/hooks"
+[init]
+  defaultBranch   = main
+  templateDir     = "~/my-git-template-dir"
+[push]
+  autoSetupRemote = true
+[pull]
+  rebase          = true
+[diff]
+  wsErrorHighlight= all
+  external        = difft
+  tool            = difftastic
+[difftool]
+  prompt          = false
+[difftool "difftastic"]
+  cmd             = difft "$LOCAL" "$REMOTE"
+[pager]
+  difftool        = true
+# `git dft` is less to type than `git difftool`.
+[alias]
+  # diff stuff
+  dft             = difftool
+  dif             = "diff --no-ext-diff"
+  dshow           = "show --ext-diff"
+  dlog            = "log --ext-diff"
+  showo           = "show --no-ext-diff"  # 'show' also does this, I just like the name
+  logo            = "log --no-ext-diff"   # 'log' also does this
+  # utilities
+  unpushed        = "log --branches --not --remotes --no-walk --decorate --oneline"
+[rebase]
+	autoStash = true
+# Define user.name, user.email, and other overrides in a local file
+[include]
+  path = ~/.gitconfig.local

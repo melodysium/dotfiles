@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# if EITHER main XOR master exist, just report that w/o a network request
+result="$(git branch | grep -E "(main|master)")"
+if [ $(echo "$result" | wc -l) -eq 1 ]; then
+  echo "$result" | tr -d "*" | tr -d '[:space:]' | { cat; echo; }
+  exit
+fi
+
+# fallback: check remote repo
+print -P "%F{red}Could not find branch %Bmain%b or %Bmaster%b locally. Determining default branch from remote %Borigin%b...%f" >&2
+git remote show origin | sed -n '/HEAD branch/s/.*: //p'
