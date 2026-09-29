@@ -1,0 +1,13 @@
+# Brewfile-formatted, but NOT run via `brew bundle`.
+#
+# These apps auto-update themselves, which fights Homebrew's own updates
+# (brew thinks it's up to date, the app's self-updater disagrees, and
+# `brew upgrade` / `brew bundle` can't cleanly manage the installed version).
+#
+# ~/.config/yadm/bootstrap iterates over the `brew`/`cask` lines below and,
+# for each one not already installed, runs `brew install` once to get it
+# onto the machine. After that, the app manages its own updates.
+
+cask "bitwarden"
+cask "discord"
+cask "ticktick"
