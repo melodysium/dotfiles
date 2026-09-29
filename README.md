@@ -1,10 +1,6 @@
 # dotfiles
 
-My dotfiles.
-
-If any of the productivity hacks here interest you, feel free to message me.
-
-## Notable elements
+my dotfiles!
 
 -   synced with [yadm](https://yadm.io/)
 -   OS: Mac OSX
