@@ -1,0 +1,13 @@
+#!/bin/sh
+# 3-way meld diff editor which starts with NO changes in output
+
+# args from jj diff-tool definition (directory paths):
+left="$(realpath "$1")"
+right="$(realpath "$2")"
+output="$(realpath "$3")"
+
+# step 1: sync $output to look like $left
+rsync -r "$left/" "$output/"
+
+# step 2: invoke meld
+meld "$left" "$output" "$right" -o "$output"

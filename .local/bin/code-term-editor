@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# determine which app is running this code
+applicationBundleId=$(osascript -e 'tell application "System Events" to get bundle identifier of first process whose frontmost is true')
+
+# open for editing
+echo "opening [$1] for editing in VS Code. will return to $applicationBundleId when that window closes."
+code --wait --new-window "$1"
+editStatus=$?
+
+# refocus original app; a failure here shouldn't fail the whole edit
+# osascript -e 'tell application "iTerm2" to activate' # focuses *all* iterm2 windows
+if [ -n "$applicationBundleId" ]; then
+    open -b "$applicationBundleId" || echo "warning: failed to refocus $applicationBundleId" >&2
+else
+    echo "warning: could not determine which app to refocus; skipping." >&2
+fi
+
+exit "$editStatus"
+# osascript -e 'tell application "System Events" to tell process "ApplicationName" to perform action "AXRaise" of window 1' -e 'tell application "ApplicationName" to activate'

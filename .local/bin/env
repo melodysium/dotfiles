@@ -1,0 +1,14 @@
+#!/bin/sh
+# this file idempotently adds "$HOME/.local/bin" to PATH if it's not present yet.
+# when adding, it **prepends** so that binaries in "$HOME/.local/bin" can override others if needed.
+
+# affix colons on either side of $PATH to simplify matching
+case ":${PATH}:" in
+    *:"$HOME/.local/bin":*)
+        # "$HOME/.local/bin" already exists somewhere in PATH; exit
+        ;;
+    *)
+        # Prepend path in case a system-installed binary needs to be overridden
+        export PATH="$HOME/.local/bin:$PATH"
+        ;;
+esac
