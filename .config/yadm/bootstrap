@@ -2,8 +2,6 @@
 
 # TODO: install more from Brewfile instead
 
-export LOCAL_BOOTSTRAP="~/.config/yadm/bootstrap.local"
-
 #set -x
 
 function label_section {
@@ -152,14 +150,17 @@ if [[ -d "$HOME/tmp-yadm" ]]; then
   print "\e[1;31mREMINDER: Remove tmp-yadm now that you have yadm from brew!"
 fi
 
+
+export LOCAL_BREWFILE="$HOME/Brewfile.local"
+if [[ -f "$LOCAL_BREWFILE" ]]; then
+  label_section "LOCAL BREWFILE"
+  brew bundle check --file="$LOCAL_BREWFILE" >/dev/null || brew bundle install --file="$LOCAL_BREWFILE"
+fi
+
+export LOCAL_BOOTSTRAP="~/.config/yadm/bootstrap.local"
 if [[ -f "$LOCAL_BOOTSTRAP" ]]; then
   label_section "LOCAL BOOTSTRAP"
   source "$LOCAL_BOOTSTRAP"
-fi
-
-if [[ -f "$ACTIVATE_PERSONAL_CONFIG" ]]; then
-  label_section "PERSONAL BOOTSTRAP"
-  brew bundle check --file=~/Brewfile-personal >/dev/null || brew bundle install --file=~/Brewfile-personal
 fi
 
 #set +x
