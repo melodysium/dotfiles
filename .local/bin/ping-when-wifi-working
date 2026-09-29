@@ -1,0 +1,6 @@
+while ! ping -q -c 1 "8.8.8.8" &>/dev/null; do
+  sleep 5
+done
+
+printf \\a
+curl parrot.live
