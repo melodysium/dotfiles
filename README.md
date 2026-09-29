@@ -19,3 +19,4 @@ If any of the productivity hacks here interest you, feel free to message me.
 -   [“fuzzy” cd command](./.config/zsh/.zshrc_prompt) using [zoxide](https://github.com/ajeetdsouza/zoxide)
 -   [VSCode editor wrapper script](./.local/bin/code-term-editor) which returns to the shell once VS Code is closed
 -   [re-install bootstrap script](./.config/yadm/bootstrap) using [brew bundle/Brewfile](https://docs.brew.sh/Brew-Bundle-and-Brewfile) and [yadm bootstrap](https://yadm.io/docs/bootstrap)
+-   [git pre-push hook](./my-git-template-dir/hooks/pre-push.stash-verify-stashpop) to stash uncommitted changes and run `mvn clean verify`
