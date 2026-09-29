@@ -1,0 +1,165 @@
+#!/bin/zsh
+
+# TODO: install more from Brewfile instead
+
+export LOCAL_BOOTSTRAP="~/.config/yadm/bootstrap.local"
+
+#set -x
+
+function label_section {
+  print "\n\n\n"
+  print "\e[1;36m----------------------------------------------\e[0m"
+  print "\e[1;36m| $1\e[0m"
+  print "\e[1;36m----------------------------------------------\e[0m"
+}
+
+
+
+label_section "HOMEBREW PACKAGES"
+if ! command -v brew &>/dev/null; then
+  # https://brew.sh/
+  echo "installing homebrew"
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  eval "$(/opt/homebrew/bin/brew shellenv zsh)" # use in this term session
+fi
+brew bundle check --file=~/Brewfile >/dev/null || brew bundle install --file=~/Brewfile
+
+
+label_section "SELF-UPDATING APPS (installed once, then left alone)"
+# these apps auto-update themselves, so they're kept out of ~/Brewfile and
+# `brew bundle` (which would fight the app's own updater). instead, install
+# each one here only if it's missing; see Brewfile_install's header.
+brewfile_install="$HOME/.config/yadm/Brewfile_install"
+if [[ -f "$brewfile_install" ]]; then
+  while IFS= read -r line; do
+    line="${line%%#*}" # strip comments
+    read -r kind quoted _ <<<"$line"
+    [[ "$kind" != "brew" && "$kind" != "cask" ]] && continue
+    name="${quoted//\"/}"
+    [[ -z "$name" ]] && continue
+
+    [[ "$kind" == "cask" ]] && flag="--cask" || flag="--formula"
+    if brew list $flag "$name" &>/dev/null; then
+      # echo "already installed: $kind \"$name\""
+      continue
+    fi
+    echo "installing $kind \"$name\" (not managed by brew bundle; self-updates from here)"
+    brew install $flag "$name"
+  done <"$brewfile_install"
+fi
+
+
+label_section "TERMINAL"
+
+# https://ohmyz.sh/
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+  # (run in subshell to not exit this script)
+  (sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)")
+fi
+
+# other oh-my-zsh plugins
+
+# p10k
+# https://github.com/romkatv/powerlevel10k?tab=readme-ov-file#oh-my-zsh
+p10k_path="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"
+if [ ! -d "$p10k_path" ]; then
+  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$p10k_path"
+fi
+
+fzf_tab_path="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/fzf-tab"
+if [ ! -d "$fzf_tab_path" ]; then
+  git clone https://github.com/Aloxaf/fzf-tab "$fzf_tab_path"
+fi
+
+shift_select_path="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-shift-select"
+if [ ! -d "$shift_select_path" ]; then
+  git clone https://github.com/jirutka/zsh-shift-select "$shift_select_path"
+fi
+
+
+# copy background image to portable path
+if [ ! -f /usr/local/share/termbkg.png ]; then
+  echo "copying 'SU Gems.png' from Google Drive"
+  sudo mkdir -p /usr/local/share
+  sudo cp "$GDRIVE/My Drive/Desktop Backgrounds/SU Gems.png" /usr/local/share/termbkg.png
+  sudo chmod 744 /usr/local/share/termbkg.png
+fi
+
+# set iterm2 preferences
+if ! defaults read com.googlecode.iterm2 PrefsCustomFolder | grep ".config/iterm2" >/dev/null; then
+  echo "Setting iTerm preference folder"
+  defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder 1 # enable loading settings from file
+  defaults write com.googlecode.iterm2 PrefsCustomFolder "$HOME/.config/iterm2" # specify the file
+  defaults write com.googlecode.iterm2 NoSyncNeverRemindPrefsChangesLostForFile_selection 0 # save changes when quitting
+fi
+
+
+
+
+label_section PYTHON
+# uv
+# https://github.com/astral-sh/uv?tab=readme-ov-file#installation
+if ! command -v uv &>/dev/null; then
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+fi
+
+label_section NODE
+# nvm
+# https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating
+if ! command -v nvm &>/dev/null; then
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+fi
+# install dependent programs
+command -v node &>/dev/null || nvm install node
+npm list --global | grep "markdownlint-cli2" >/dev/null || npm install markdownlint-cli2 --global
+
+
+label_section "RUST"
+# cargo
+if ! command -v cargo &>/dev/null; then
+  curl https://sh.rustup.rs -sSf | sh
+  . "$HOME/.cargo/env"
+fi
+
+
+label_section "JAVA"
+# use jenv in this shell
+export PATH="$HOME/.jenv/bin:$PATH"
+eval "$(jenv init -)"
+if ! jenv versions | grep "openjdk64-21" >/dev/null; then
+  jenv add "$(brew --prefix openjdk@21)"
+fi
+
+
+label_section "SOURCING .ZSHRC"
+# place anything requiring sourcing .zshrc in here
+source "$ZDOTDIR/.zshrc"
+
+# install fonts
+if [[ $(fc-list | grep "MesloLGS NF" | wc -l) -ne 4 ]]; then
+  echo "installing MesloLGS NF fonts by invoking p10k configure."
+  echo "please let it auto-install the fonts, then interrupt it with ^C."
+  print "[Enter] to begin..."
+  read
+  p10k configure
+fi
+
+
+if [[ -d "$HOME/tmp-yadm" ]]; then
+  print "\e[1;31mREMINDER: Remove tmp-yadm now that you have yadm from brew!"
+fi
+
+if [[ -f "$LOCAL_BOOTSTRAP" ]]; then
+  label_section "LOCAL BOOTSTRAP"
+  source "$LOCAL_BOOTSTRAP"
+fi
+
+if [[ -f "$ACTIVATE_PERSONAL_CONFIG" ]]; then
+  label_section "PERSONAL BOOTSTRAP"
+  brew bundle check --file=~/Brewfile-personal >/dev/null || brew bundle install --file=~/Brewfile-personal
+fi
+
+#set +x
