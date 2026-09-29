@@ -1,0 +1,389 @@
+#!/bin/zsh
+# .zshrc_human - full terminal prompt and startup reminders for humans
+
+#.zpath isn't sourced yet because:
+# - zpath might take non-trivial amount of time
+# - we want to run p10k instant prompt after any startup text is printed, but before full zpath for time delay
+# so we manually source our specific dependencies here extra
+#
+# homebrew setup
+# eval "$(/opt/homebrew/bin/brew shellenv)"
+# Remind myself to use commands
+hr; /bin/cat "${ZDOTDIR}/help.txt"; hr
+# bat --style=grid --paging=never "${ZDOTDIR}/help.txt"
+# function print_random_section_of_zshrc {
+#   # Pick a random few lines of my ${ZDOTDIR}/.zprofile to remind myself of
+#   if [[ $(type rand) == "rand is a shell function"* ]]; then
+#     lines_in_zprofile=$(cat ${ZDOTDIR}/.zshrc | wc -l)
+#     skip_start=0
+#     skip_end=0
+#     lines_to_print=$(rand between 5 15)
+#     lines_to_pick_from=$((lines_in_zprofile - lines_to_print - skip_start - skip_end))
+#     start_line=$(rand between $skip_start $((lines_to_pick_from + skip_start)) )
+#     bat\
+#       --line-range=$start_line:+$lines_to_print \
+#       --style=grid,numbers,header \
+#       --paging=never \
+#       --file-name="part of .zshrc" \
+#       ${ZDOTDIR}/.zshrc
+#   else
+#     echo -e "\e[2m\`rand\` doesn't exist, skipping .zprofile snippet printout"
+#   fi
+# }
+#print_random_section_of_zshrc
+
+
+
+# Enable Powerlevel10k instant prompt. Should stay close to the top of .zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+
+
+
+# ------------------------
+# COMPLETIONS
+# ------------------------
+
+# Docker CLI completions
+# 2026-02-27: don't want these, they take like 300ms to load and I don't use docker CLI lol
+#fpath=("$HOME/.docker/completions" $fpath)
+
+zstyle ':completion:*' menu select
+fpath+=~/.zfunc
+
+# abbreviations
+# https://zsh-abbr.olets.dev/installation.html
+# get reminders to use abbreviations
+# TODO: these seem not to be working, why?
+export ABBR_GET_AVAILABLE_ABBREVIATION=1
+export ABBR_LOG_AVAILABLE_ABBREVIATION=1
+if type brew &>/dev/null; then
+  FPATH=$(brew --prefix)/share/zsh-abbr:$FPATH
+  # You may also need to force rebuild `zcompdump`:
+  # rm -f ~/.zcompdump; compint
+  # Additionally, if you receive "zsh compinit: insecure directories"
+  # warnings when attempting to load these completions, you may need
+  # to run these commands:
+  # chmod go-w '/opt/homebrew/share'
+  # chmod -R go-w '/opt/homebrew/share/zsh'
+fi
+
+source $(brew --prefix)/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
+# https://github.com/marlonrichert/zsh-autocomplete?tab=readme-ov-file#configuration
+# Wait with autocompletion until typing stops for a certain amount of seconds
+# zstyle ':autocomplete:*' delay 1.0  # seconds (float)
+# Wait for a minimum amount of input
+# zstyle ':autocomplete:*' min-input 3
+# Change the max number of lines shown
+# Note: -e lets you specify a dynamically generated value.
+# Override default for all listings
+# $LINES is the number of lines that fit on screen.
+zstyle -e ':autocomplete:*:*' list-lines 'reply=( $(( LINES / 3 )) )'
+# Override for recent path search only
+#zstyle ':autocomplete:recent-paths:*' list-lines 10
+# Override for history search only
+#zstyle ':autocomplete:history-incremental-search-backward:*' list-lines 8
+# Override for history menu only
+#zstyle ':autocomplete:history-search-backward:*' list-lines 2000
+# not from github: also setting global zsh completions line count to match
+zstyle -e ':completion:*' list-lines 'reply=( $(( LINES / 3 )) )'
+
+# claude fix for autocomplete popup killing zsh-shift-select regions
+# wrap the two callbacks so they do nothing while a selection is active
+functions[.ac:wait:orig]=$functions[.autocomplete:async:wait:callback]
+functions[.ac:complete:orig]=$functions[.autocomplete:async:complete:callback]
+.autocomplete:async:wait:callback()     { (( REGION_ACTIVE )) && return 0; .ac:wait:orig "$@" }
+.autocomplete:async:complete:callback() { (( REGION_ACTIVE )) && return 0; .ac:complete:orig "$@" }
+
+
+
+# ------------------------
+# END COMPLETIONS
+# ------------------------
+
+
+
+# ------------------------
+# OH-MY-ZSH
+# ------------------------
+
+
+
+# If you come from bash you might have to change your $PATH.
+# export PATH=$HOME/bin:/usr/local/bin:$PATH
+
+# Path to your oh-my-zsh installation.
+export ZSH="$HOME/.oh-my-zsh"
+
+# Set name of the theme to load --- if set to "random", it will
+# load a random theme each time oh-my-zsh is loaded, in which case,
+# to know which specific one was loaded, run: echo $RANDOM_THEME
+# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
+ZSH_THEME="powerlevel10k/powerlevel10k"
+
+# Set list of themes to pick from when loading at random
+# Setting this variable when ZSH_THEME=random will cause zsh to load
+# a theme from this variable instead of looking in $ZSH/themes/
+# If set to an empty array, this variable will have no effect.
+# ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
+
+# Uncomment the following line to use case-sensitive completion.
+# CASE_SENSITIVE="true"
+
+# Uncomment the following line to use hyphen-insensitive completion.
+# Case-sensitive completion must be off. _ and - will be interchangeable.
+# HYPHEN_INSENSITIVE="true"
+
+# Uncomment one of the following lines to change the auto-update behavior
+# zstyle ':omz:update' mode disabled  # disable automatic updates
+# zstyle ':omz:update' mode auto      # update automatically without asking
+# zstyle ':omz:update' mode reminder  # just remind me to update when it's time
+
+# Uncomment the following line to change how often to auto-update (in days).
+# zstyle ':omz:update' frequency 13
+
+# Uncomment the following line if pasting URLs and other text is messed up.
+# DISABLE_MAGIC_FUNCTIONS="true"
+
+# Uncomment the following line to disable colors in ls.
+# DISABLE_LS_COLORS="true"
+
+# Uncomment the following line to disable auto-setting terminal title.
+# DISABLE_AUTO_TITLE="true"
+
+# Uncomment the following line to enable command auto-correction.
+# ENABLE_CORRECTION="true"
+
+# Uncomment the following line to display red dots whilst waiting for completion.
+# You can also set it to another string to have that shown instead of the default red dots.
+# e.g. COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
+# Caution: this setting can cause issues with multiline prompts in zsh < 5.7.1 (see #5765)
+# COMPLETION_WAITING_DOTS="true"
+
+# Uncomment the following line if you want to disable marking untracked files
+# under VCS as dirty. This makes repository status check for large repositories
+# much, much faster.
+# DISABLE_UNTRACKED_FILES_DIRTY="true"
+
+# Uncomment the following line if you want to change the command execution time
+# stamp shown in the history command output.
+# You can set one of the optional three formats:
+# "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
+# or set a custom format using the strftime function format specifications,
+# see 'man strftime' for details.
+# HIST_STAMPS="mm/dd/yyyy"
+
+# Would you like to use another custom folder than $ZSH/custom?
+# ZSH_CUSTOM=/path/to/new-custom-folder
+
+# Which plugins would you like to load?
+# Standard plugins can be found in $ZSH/plugins/
+# Custom plugins may be added to $ZSH_CUSTOM/plugins/
+# Example format: plugins=(rails git textmate ruby lighthouse)
+# Add wisely, as too many plugins slow down shell startup.
+plugins=(
+#  git # 2026-02-26: replacing with custom abbreviations
+  fzf-tab
+  zsh-shift-select
+)
+
+# https://scottspence.com/posts/speeding-up-my-zsh-shell
+DISABLE_UPDATE_PROMPT=true
+DISABLE_MAGIC_FUNCTIONS="true"
+ZSH_DISABLE_COMPFIX="true"
+source $ZSH/oh-my-zsh.sh
+
+# User configuration
+
+# export MANPATH="/usr/local/man:$MANPATH"
+
+# You may need to manually set your language environment
+# export LANG=en_US.UTF-8
+
+# Preferred editor for local and remote sessions
+# if [[ -n $SSH_CONNECTION ]]; then
+#   export EDITOR='vim'
+# else
+#   export EDITOR='mvim'
+# fi
+
+# Compilation flags
+# export ARCHFLAGS="-arch x86_64"
+
+# Set personal aliases, overriding those provided by oh-my-zsh libs,
+# plugins, and themes. Aliases can be placed here, though oh-my-zsh
+# users are encouraged to define aliases within the ZSH_CUSTOM folder.
+# For a full list of active aliases, run `alias`.
+#
+# Example aliases
+# alias zshconfig="mate ~/.zshrc"
+# alias ohmyzsh="mate ~/.oh-my-zsh"
+
+# ------------------------
+# END OH-MY-ZSH
+# ------------------------
+
+
+
+
+# powerlevel10k prompt
+# To customize prompt, run `p10k configure` or edit .p10k.zsh.
+[[ ! -f "${ZDOTDIR}/.p10k.zsh" ]] || source "${ZDOTDIR}/.p10k.zsh"
+
+
+
+
+# zoxide install
+eval "$(zoxide init zsh --cmd=c)"
+function cd() {
+  echo "\033[31;1mNUDGE: try using c (from zoxide) instead!\033[0m" >&2
+  builtin cd "$@"
+}
+function cl() { c "$@" && ls }
+
+
+# extra cool fzf stuff
+source "${ZDOTDIR}/.fzf-git.sh"
+
+
+# zsh-abbr!
+source $(brew --prefix)/share/zsh-abbr/zsh-abbr.zsh
+
+
+# autosuggestions
+# https://github.com/zsh-users/zsh-autosuggestions/blob/master/INSTALL.md
+source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+
+
+# syntax-highlighting
+# MUST be one of the last things sourced
+# https://github.com/zsh-users/zsh-syntax-highlighting/blob/master/INSTALL.md
+source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+
+# https://github.com/marlonrichert/zsh-autocomplete?tab=readme-ov-file#configuration
+# Restore Zsh-default history shortcuts
+# default zsh stuff here: https://github.com/zsh-users/zsh/blob/master/Functions/Zle/up-line-or-beginning-search
+# history-beginning-search-backward - this immediately jumps into history. unwated bc i paste multi-line commands and want to nav there.
+# history-beginning-search-forward
+# up-line-or-beginning-search - this works better, but still blocks arrow inputs on *some* autocomplete suggestions
+# down-line-or-beginning-search
+# .up-line-or-history - this is recommended by zsh-autocompletions, and skips all of the completions, but doesn't include beginning search
+# .down-line-or-history
+# i want:
+#   - up arrow when in a command buffer
+#   - history with beginning search when at top of command buffer
+# Claude-suggested fix for this issue:
+# Own up/down "beginning search" widgets. The stock up-line-or-beginning-search relies on
+# $LASTWIDGET, which zsh-autocomplete's async callbacks overwrite -> search gets stuck once
+# the dialog appears. This keeps its state in variables instead.
+typeset -g _hs_result= _hs_cursor=0
+_hs_search() {
+  local dir=$1
+  if [[ $dir == backward && $LBUFFER == *$'\n'* ]]; then zle .up-line-or-history; return; fi
+  if [[ $dir == forward  && $RBUFFER == *$'\n'* ]]; then zle .down-line-or-history; return; fi
+  # still on the line our last search produced -> keep the original prefix length
+  [[ -n $_hs_result && $BUFFER == $_hs_result ]] && CURSOR=$_hs_cursor
+  _hs_cursor=$CURSOR
+  zle .history-beginning-search-$dir
+  _hs_result=$BUFFER; CURSOR=$#BUFFER
+}
+hs-up()   { _hs_search backward }
+hs-down() { _hs_search forward }
+zle -N hs-up; zle -N hs-down
+
+# HELP: https://thevaluable.dev/zsh-line-editor-configuration-mouseless/
+bindkey -M emacs \
+    "^[p"   .history-search-backward \
+    "^[n"   .history-search-forward \
+    "^P"    hs-up \
+    "^[OA"  hs-up \
+    "^[[A"  hs-up \
+    "^N"    hs-down \
+    "^[OB"  hs-down \
+    "^[[B"  hs-down \
+    "^R"    .history-incremental-search-backward \
+    "^S"    .history-incremental-search-forward \
+    #
+bindkey -a \
+    "^P"    .up-history \
+    "^N"    .down-history \
+    "k"     hs-up \
+    "^[OA"  hs-up \
+    "^[[A"  hs-up \
+    "j"     hs-down \
+    "^[OB"  hs-down \
+    "^[[B"  hs-down \
+    "/"     .vi-history-search-backward \
+    "?"     .vi-history-search-forward \
+
+# restore original tab behavior
+add-zsh-hook precmd bind-tab
+bind-tab() {
+  # Rebinds Tab to the standard Zsh completion widget
+  bindkey '\t' expand-or-complete
+
+  # Optional: Rebind Shift-Tab if needed
+  # bindkey "$terminfo[kcbt]" reverse-menu-complete
+}
+
+# add shortcut for redo
+bindkey '^X^U' redo
+
+# Claude-generated code to make selections (from zsh-shift-select) work more like GUI text editors
+# --- shift-select: replace/cut/copy the selection ---
+shift-select::copy() {
+  ((REGION_ACTIVE)) || return 0
+  local s=$(( MARK < CURSOR ? MARK : CURSOR )) e=$(( MARK < CURSOR ? CURSOR : MARK ))
+  print -rn -- "${BUFFER[s+1,e]}" | pbcopy   # keeps the selection, like a text field
+}
+shift-select::delete() {
+  local s=$(( MARK < CURSOR ? MARK : CURSOR )) e=$(( MARK < CURSOR ? CURSOR : MARK ))
+  BUFFER=${BUFFER[1,s]}${BUFFER[e+1,-1]}
+  CURSOR=$s
+  zle deactivate-region
+  zle -K main
+}
+shift-select::cut() {
+  ((REGION_ACTIVE)) || return 0
+  shift-select::copy
+  shift-select::delete
+}
+shift-select::replace-and-input() {
+  shift-select::delete
+  zle -U "$KEYS"
+}
+for w in copy cut replace-and-input; do zle -N shift-select::$w; done
+
+bindkey -M shift-select -R ' '-'~' shift-select::replace-and-input
+bindkey -M shift-select '^Y' shift-select::replace-and-input              # yank
+bindkey -M shift-select '^[[200~' shift-select::replace-and-input         # paste
+bindkey -M shift-select '^[[99;9u'  shift-select::copy                    # Cmd+C
+bindkey -M shift-select '^[[120;9u' shift-select::cut                     # Cmd+X
+bindkey -M emacs '^[[99;9u' shift-select::copy '^[[120;9u' shift-select::cut  # no selection: no-op
+
+
+
+# thefuck
+eval $(thefuck --alias)
+
+# fzf
+source "${ZDOTDIR}/.fzf.zsh"
+
+# Added by iTerm2 for Shell Integration
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh" || true
+
+
+# use `bat` as a drop-in replacement
+alias bat="/opt/homebrew/bin/bat --wrap=never"
+alias cat='/opt/homebrew/bin/bat --wrap=never --paging=never'
+#alias man='batman'
+export LESS="-FINRS"
+export PAGER="bat"
+
+# Reminders to use better things instead
+alias exit="echo 'no dummy, use \`bye\` instead'"

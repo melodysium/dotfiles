@@ -1,0 +1,14 @@
+shortcuts:
+  ^G - (fzf) search Git bits
+  ^R - (fzf) search cmd history
+  ^T - (fzf) search current directory
+  ^N - open Navi (saved commands)
+  ⌘D - split pane (⌘⇧D for vertical)
+  ^Z - send program to background (`fg` to restore)
+  ⌥↓ - enter completions menu
+
+reminders:
+  c <path-fragment> (cl for c + ls; <space><tab> shows autocompletions)
+  `less` nav: [space] / [b], [G] / [g]
+  fif / fif-hidden for "find-in-files"
+  help-abbr to search abbreviations
