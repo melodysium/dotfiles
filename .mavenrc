@@ -1,0 +1,4 @@
+# Make Maven follow jenv (.java-version / global) even when the shell's lazy-loaded jenv init
+# hasn't run or JAVA_HOME is stale. `jenv javahome` is the real binary, so no init needed.
+# Overrides any JAVA_HOME; bypass with MAVEN_SKIP_RC=1. See ~/.agents/skills/jenv-java-version.
+command -v jenv >/dev/null 2>&1 && export JAVA_HOME="$(jenv javahome)"
