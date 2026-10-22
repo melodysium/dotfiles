@@ -18,6 +18,19 @@ guidance (e.g. `change-description-style`) applied to the rest of the text.
 - Work ticket descriptions
 - Work ticket comments
 - Wiki pages
+- GitHub issues, issue comments, and PRs (e.g. upstream open-source contributions)
+
+**Learning (2026-10-16, Melody):** we bias too much toward two lines. Where the
+text and the underlying work have the same provenance (e.g. a comment Melody and
+this agent drafted together), one line suffices:
+
+```
+AI disclaimer: 🤖+🧑 AI + human collaboration, full human review and editing before posting
+```
+
+Use the two-line form below only when the text's authorship and the work's
+human involvement really differ. Default to one line on public surfaces
+(like GitHub) and when in doubt, show Melody the draft header.
 
 If a new surface comes up that isn't listed here but fits the same pattern (AI
 text landing somewhere a human reader would assume a human wrote it), apply the
@@ -66,6 +79,10 @@ code output (e.g. a work ticket documenting a collaborative incident
 investigation gets `🤖+🧑 AI + human collaboration, full human self-review` even
 though nothing was committed).
 
+## Melody may drop the header after heavy editing
+
+If Melody edits a posted draft enough that she no longer considers it AI-authored, she may delete the header herself (observed 2026-10-19). That doesn't change what to do beforehand: still add the header when drafting and posting. Don't restore a header she removed.
+
 ## Deciding which value applies: ask, don't assume
 
 This is a judgment call about what happened over the course of a session, and
@@ -102,13 +119,26 @@ whether the change is significant enough to bump the category, ask.
 
 ## Placement
 
-Both lines go at the very top of the text body, before the summary, ticket
-description, comment content, or any other content, with no blank line between
-them, then a blank line before the rest of the text:
+The disclosure (both lines, or the single collaboration line) goes at the very
+top of the text body, before the summary, ticket description, comment content,
+or any other content. In the two-line form there's no blank line between the
+lines. Always put a horizontal line directly below the disclosure, then the rest
+of the text, so readers can see where the disclosure ends and the content begins.
+
+Pick the horizontal line by what the surface supports, in this order:
+
+1. **Rich-text horizontal rule element**, if the environment has one (e.g. a
+   wiki or ticket editor's divider). Use it.
+2. **HTML**, if the surface renders it: `<hr>`. Try this where it's plausible.
+3. **Otherwise**, a Markdown/plain-text `---` on its own line, with a blank line
+   before and after (the blank line before keeps `---` from turning the
+   disclosure into a setext heading):
 
 ```
 PR summary: 🤖 AI-generated
 PR changes: 🤖+🧑 AI + human collaboration, full human self-review
+
+---
 
 <rest of the PR description>
 ```
@@ -117,5 +147,15 @@ PR changes: 🤖+🧑 AI + human collaboration, full human self-review
 Ticket description: 🤖 AI-generated
 Underlying work: 🤖+🧑 AI + human collaboration, full human self-review
 
+---
+
 <rest of the ticket description>
+```
+
+```
+AI disclaimer: 🤖+🧑 AI + human collaboration, full human review and editing before posting
+
+---
+
+<rest of the comment>
 ```
