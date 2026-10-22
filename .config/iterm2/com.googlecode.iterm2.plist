@@ -1375,7 +1375,7 @@
 			</array>
 			<key>Keyboard Map</key>
 			<dict>
-				<key>0x19-0x60000-0x30</key>
+				<key>0x19-0x60000-0x30-0x1</key>
 				<dict>
 					<key>Action</key>
 					<integer>2</integer>
@@ -1388,7 +1388,7 @@
 					<key>Version</key>
 					<integer>2</integer>
 				</dict>
-				<key>0x5a-0x120000-0x6</key>
+				<key>0x5a-0x120000-0x6-0x1</key>
 				<dict>
 					<key>Action</key>
 					<integer>11</integer>
@@ -1401,7 +1401,7 @@
 					<key>Version</key>
 					<integer>2</integer>
 				</dict>
-				<key>0x63-0x100000-0x8</key>
+				<key>0x63-0x100000-0x8-0x1</key>
 				<dict>
 					<key>Action</key>
 					<integer>11</integer>
@@ -1414,7 +1414,7 @@
 					<key>Version</key>
 					<integer>2</integer>
 				</dict>
-				<key>0x78-0x100000-0x7</key>
+				<key>0x78-0x100000-0x7-0x1</key>
 				<dict>
 					<key>Action</key>
 					<integer>11</integer>
@@ -1427,7 +1427,7 @@
 					<key>Version</key>
 					<integer>2</integer>
 				</dict>
-				<key>0x7a-0x100000-0x6</key>
+				<key>0x7a-0x100000-0x6-0x1</key>
 				<dict>
 					<key>Action</key>
 					<integer>11</integer>
@@ -1454,7 +1454,7 @@
 					<key>Text</key>
 					<string>0x1b 0x7f</string>
 				</dict>
-				<key>0x9-0x40000-0x30</key>
+				<key>0x9-0x40000-0x30-0x1</key>
 				<dict>
 					<key>Action</key>
 					<integer>0</integer>
@@ -1467,7 +1467,7 @@
 					<key>Version</key>
 					<integer>2</integer>
 				</dict>
-				<key>0xf702-0x220000-0x7b</key>
+				<key>0xf702-0x220000-0x7b-0x1</key>
 				<dict>
 					<key>Action</key>
 					<integer>11</integer>
@@ -1487,7 +1487,7 @@
 					<key>Text</key>
 					<string>b</string>
 				</dict>
-				<key>0xf702-0x2a0000-0x7b</key>
+				<key>0xf702-0x2a0000-0x7b-0x1</key>
 				<dict>
 					<key>Action</key>
 					<integer>11</integer>
@@ -1507,7 +1507,7 @@
 					<key>Text</key>
 					<string>0x1</string>
 				</dict>
-				<key>0xf702-0x320000-0x7b</key>
+				<key>0xf702-0x320000-0x7b-0x1</key>
 				<dict>
 					<key>Action</key>
 					<integer>11</integer>
@@ -1520,7 +1520,7 @@
 					<key>Version</key>
 					<integer>2</integer>
 				</dict>
-				<key>0xf703-0x220000-0x7c</key>
+				<key>0xf703-0x220000-0x7c-0x1</key>
 				<dict>
 					<key>Action</key>
 					<integer>11</integer>
@@ -1540,7 +1540,7 @@
 					<key>Text</key>
 					<string>f</string>
 				</dict>
-				<key>0xf703-0x2a0000-0x7c</key>
+				<key>0xf703-0x2a0000-0x7c-0x1</key>
 				<dict>
 					<key>Action</key>
 					<integer>11</integer>
@@ -1560,7 +1560,7 @@
 					<key>Text</key>
 					<string>0x5</string>
 				</dict>
-				<key>0xf703-0x320000-0x7c</key>
+				<key>0xf703-0x320000-0x7c-0x1</key>
 				<dict>
 					<key>Action</key>
 					<integer>11</integer>
