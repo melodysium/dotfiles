@@ -39,6 +39,7 @@
 -   for any **state-changing** version control commands, use `jj` commands instead of `git` ones.
 -   for any **read-only** version control commands, both `jj` and `git` commands are permitted.
 -   if a repo has not yet been initialized to use `jj`, pause and ask the user if they'd like to initialize `jj` in the repo.
+-   when one agent is rewriting jj history or the working copy, parallel subagents can still help if they're **report-only** (no filesystem writes, not even temp files); save their results yourself afterwards.
 
 ## documentation
 
