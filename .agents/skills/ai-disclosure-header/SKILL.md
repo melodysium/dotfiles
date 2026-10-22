@@ -1,6 +1,6 @@
 ---
 name: ai-disclosure-header
-description: Adds two fixed disclosure lines to the very top of any AI-authored text placed somewhere a human would normally expect human-curated writing — PR descriptions, PR comments, Jira ticket descriptions, Jira comments, Confluence pages, and similar. One line flags that the visible text itself is AI-generated (always true, since this agent wrote it); the other flags how much human involvement went into the underlying work the text describes (a code change, an investigation, research, a design decision, etc). Consult this whenever drafting or finalizing text on one of these surfaces through this agent, right before writing the rest of the content. Do not skip it for small or opportunistic edits — the header applies regardless of size or surface.
+description: Adds two fixed disclosure lines to the very top of any AI-authored text placed somewhere a human would normally expect human-curated writing — PR descriptions, PR comments, work ticket descriptions, work ticket comments, wiki pages, and similar. One line flags that the visible text itself is AI-generated (always true, since this agent wrote it); the other flags how much human involvement went into the underlying work the text describes (a code change, an investigation, research, a design decision, etc). Consult this whenever drafting or finalizing text on one of these surfaces through this agent, right before writing the rest of the content. Do not skip it for small or opportunistic edits — the header applies regardless of size or surface.
 ---
 
 # AI disclosure header
@@ -15,9 +15,9 @@ guidance (e.g. `change-description-style`) applied to the rest of the text.
 
 - PR descriptions
 - PR comments
-- Jira ticket descriptions
-- Jira comments
-- Confluence pages
+- Work ticket descriptions
+- Work ticket comments
+- Wiki pages
 
 If a new surface comes up that isn't listed here but fits the same pattern (AI
 text landing somewhere a human reader would assume a human wrote it), apply the
@@ -37,9 +37,9 @@ matches the surface:
 |---|---|
 | PR description | `PR summary` |
 | PR comment | `PR comment` |
-| Jira ticket description | `Ticket description` |
-| Jira comment | `Ticket comment` |
-| Confluence page | `Page content` |
+| Work ticket description | `Ticket description` |
+| Work ticket comment | `Ticket comment` |
+| Wiki page | `Page content` |
 
 ## Line 2: reflects human involvement in the underlying *work*, not the text
 
@@ -62,7 +62,7 @@ separate question from who wrote the text describing it. Pick exactly one:
 
 This line applies whenever the text describes work that happened, which in
 practice is almost always — including pure investigations or research with no
-code output (e.g. a Jira ticket documenting a collaborative incident
+code output (e.g. a work ticket documenting a collaborative incident
 investigation gets `🤖+🧑 AI + human collaboration, full human self-review` even
 though nothing was committed).
 
