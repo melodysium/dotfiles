@@ -1,0 +1,16 @@
+# Template for ~/.config/yadm/leak-patterns (copy it, uncomment, fill in).
+#
+# One extended regex per line, matched case-insensitively. Blank lines and #comments are ignored.
+# These are the things that must never appear in anything pushed to a PUBLIC remote: file contents,
+# file paths, commit authors/messages, and diffs. Used by the pre-push hook and by
+# ~/.agents/skills/manage-dotfiles-repo/scripts/leak-scan.
+#
+# The real file is private by nature (it names the very things that must not leak), so keep it on a
+# private branch only, never on a branch that goes to a public remote.
+#
+# Ideas: your surname, your employer's name, internal hostnames and domains, internal repo paths,
+# ticket-project prefixes, internal package-index hosts.
+#
+#surname
+#employername
+#internal\.example\.com

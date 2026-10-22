@@ -1,0 +1,49 @@
+#!/bin/bash
+# Git pre-push hook for the yadm dotfiles repo itself: refuse to push anything containing private
+# details to a remote that has been marked PUBLIC.
+#
+# How it works: for each ref being pushed, it runs leak-scan (file contents, paths, authors, commit
+# messages, and added diff lines) over the commits that would be new on the remote, plus the full tree.
+# The patterns come from ~/.config/yadm/leak-patterns, a private file that never goes on a public
+# branch (see leak-patterns.example). Remotes not marked public are not checked.
+#
+# Setup (done by .config/yadm/bootstrap; this repo-local setting overrides the global core.hooksPath):
+#   yadm gitconfig core.hooksPath ~/.config/yadm/git-hooks
+# Mark a remote public (once per machine; note `yadm gitconfig`, not `yadm config`, which writes to
+# yadm's own identity file that hooks can't see):
+#   yadm gitconfig remote.<name>.public true
+# Fails closed: a public remote with no patterns file blocks the push. Bypass, knowingly, with:
+#   SKIP_LEAK_SCAN=1 yadm push ...
+# Workflow and rationale: ~/.agents/skills/manage-dotfiles-repo/SKILL.md
+
+remote=$1
+[ "$(git config --get --type=bool "remote.$remote.public" 2>/dev/null)" = "true" ] || exit 0
+
+if [ -n "${SKIP_LEAK_SCAN:-}" ]; then
+  echo "pre-push: SKIP_LEAK_SCAN set; NOT scanning the push to public remote '$remote'" >&2
+  exit 0
+fi
+
+scan="$HOME/.agents/skills/manage-dotfiles-repo/scripts/leak-scan"
+if [ ! -x "$scan" ]; then
+  echo "pre-push: '$remote' is public but $scan is missing; refusing to push" >&2
+  exit 1
+fi
+
+zero=0000000000000000000000000000000000000000
+status=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue   # deleting a remote ref sends no content
+  args=()
+  # only the commits the remote doesn't have yet (if we have its tip locally); otherwise scan everything
+  if [ "$remote_sha" != "$zero" ] && git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+    args=(--since "$remote_sha")
+  fi
+  echo "pre-push: leak-scan of $local_ref for public remote '$remote'" >&2
+  "$scan" "${args[@]}" "$local_sha" >&2 || status=1
+done
+
+if [ $status -ne 0 ]; then
+  echo "pre-push: BLOCKED. Fix the hits above, or see ~/.agents/skills/manage-dotfiles-repo/SKILL.md." >&2
+fi
+exit $status
