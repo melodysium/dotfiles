@@ -1,0 +1,42 @@
+#!/bin/bash
+# Scan refs for private details before they go to a PUBLIC remote.
+#
+# usage: leak-scan [--since <rev>] <ref>...
+#   Scans, for each ref: file contents, file paths, author/committer + commit messages, and diffs.
+#   --since <rev>  only look at commits in <rev>..<ref> for the message/diff checks (tree + paths are
+#                  always the full tree at <ref>). Use `--since <remote>/<branch>` to check only what
+#                  you are about to push; omit it to also surface leaks already in history.
+#   Exit status: 0 = clean, 1 = hits found, 2 = no patterns file.
+#
+# Patterns: one extended regex per line (blank lines and #comments ignored), in
+#   ${DOTFILES_LEAK_PATTERNS:-~/.config/yadm/leak-patterns}
+# That file is private by nature (it names the things that must not leak), so it is never committed
+# to a public branch. If it's missing, ask the user for the patterns instead of guessing.
+set -u
+G="git --git-dir=$HOME/.local/share/yadm/repo.git --work-tree=$HOME"
+PAT="${DOTFILES_LEAK_PATTERNS:-$HOME/.config/yadm/leak-patterns}"
+since=""
+if [ "${1:-}" = "--since" ]; then since=$2; shift 2; fi
+[ $# -gt 0 ] || { echo "usage: leak-scan [--since <rev>] <ref>..." >&2; exit 2; }
+[ -f "$PAT" ] || { echo "no leak patterns file at $PAT" >&2; exit 2; }
+P=$(mktemp); trap 'rm -f "$P"' EXIT
+grep -vE '^[[:space:]]*(#|$)' "$PAT" > "$P"
+[ -s "$P" ] || { echo "leak patterns file has no patterns: $PAT" >&2; exit 2; }
+
+status=0
+for ref in "$@"; do
+  range=${since:+$since..}$ref
+  echo "=== $ref (commits: $range) ==="
+  hit=0
+  out=$($G grep -I -n -i -E -f "$P" "$ref" -- 2>/dev/null | cut -c1-200)
+  [ -z "$out" ] || { echo "-- file contents:"; echo "$out"; status=1; hit=1; }
+  out=$($G ls-tree -r --name-only "$ref" | grep -i -E -f "$P")
+  [ -z "$out" ] || { echo "-- file paths:"; echo "$out"; status=1; hit=1; }
+  out=$($G log --format='%h %an <%ae> | %cn <%ce> | %s%n%b' "$range" | grep -i -E -f "$P" | cut -c1-200)
+  [ -z "$out" ] || { echo "-- commit authors/messages:"; echo "$out"; status=1; hit=1; }
+  # added lines only: a removed line was added by an earlier commit, which is where it gets reported
+  out=$($G log -p --format='commit %h' "$range" | grep -E '^\+' | grep -v -E '^\+\+\+ ' | grep -i -E -f "$P" | cut -c1-200 | sort -u | head -40)
+  [ -z "$out" ] || { echo "-- added diff lines (unique matching, first 40):"; echo "$out"; status=1; hit=1; }
+  [ $hit -eq 0 ] && echo "clean"
+done
+exit $status
