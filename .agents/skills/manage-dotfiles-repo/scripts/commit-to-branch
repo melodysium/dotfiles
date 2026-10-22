@@ -1,0 +1,59 @@
+#!/bin/sh
+# Build one commit on a branch WITHOUT checking it out, touching the work tree, or touching the real index.
+#
+# Why: the dotfiles work tree is $HOME. Switching branches there deletes every file that only the
+# other branch tracks (shell config, scripts), which breaks live shells and tools mid-session.
+#
+# usage: commit-to-branch <branch> "<subject>" <spec>...
+#   spec = <path>            stage the path's CURRENT work-tree contents (new or modified)
+#   spec = <path>=<blobsha>  stage that exact blob at <path> (existing mode kept). Use this to commit
+#                            part of a file: build the blob with `git apply --cached` on a temp index.
+#
+# Only for a branch that is NOT currently checked out (it would desync the real index).
+# Env: DOTFILES_COMMIT_TRAILER (optional trailer line), DOTFILES_LEAK_PATTERNS (see leak-scan).
+# Identity: plumbing bypasses yadm's identity override, so it is read from yadm's own config file.
+set -eu
+branch=$1; subject=$2; shift 2
+G="git --git-dir=$HOME/.local/share/yadm/repo.git --work-tree=$HOME"
+
+if [ "$($G symbolic-ref --short -q HEAD)" = "$branch" ]; then
+  echo "refusing: $branch is checked out; use a normal 'yadm add' + 'yadm commit' instead" >&2; exit 1
+fi
+
+YC="$HOME/.config/yadm/config"
+export GIT_AUTHOR_NAME="$(git config -f "$YC" user.name)" GIT_AUTHOR_EMAIL="$(git config -f "$YC" user.email)"
+export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME" GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
+[ -n "$GIT_AUTHOR_NAME" ] && [ -n "$GIT_AUTHOR_EMAIL" ] || { echo "refusing: no identity in $YC" >&2; exit 1; }
+# if the private leak-patterns file exists, the identity must not match it (see leak-scan)
+PAT="${DOTFILES_LEAK_PATTERNS:-$HOME/.config/yadm/leak-patterns}"
+export GIT_INDEX_FILE="$(mktemp -u "${TMPDIR:-/tmp}/yadm-idx.XXXXXX")"
+PATS="$GIT_INDEX_FILE.patterns"
+trap 'rm -f "$GIT_INDEX_FILE" "$PATS"' EXIT
+if [ -f "$PAT" ]; then
+  grep -vE '^[[:space:]]*(#|$)' "$PAT" > "$PATS" || true
+  if [ -s "$PATS" ] && printf '%s <%s>\n' "$GIT_AUTHOR_NAME" "$GIT_AUTHOR_EMAIL" | grep -qiE -f "$PATS"; then
+    echo "refusing: identity $GIT_AUTHOR_NAME <$GIT_AUTHOR_EMAIL> matches a leak pattern" >&2; exit 1
+  fi
+fi
+
+parent=$($G rev-parse "refs/heads/$branch")
+$G read-tree "$parent"
+for spec in "$@"; do
+  case $spec in
+    *=*)
+      path=${spec%%=*}; blob=${spec#*=}
+      mode=$($G ls-files -s -- "$path" | awk 'NR==1{print $1}')
+      $G update-index --add --cacheinfo "${mode:-100644},$blob,$path"
+      ;;
+    *) $G add -- "$spec" ;;
+  esac
+done
+
+tree=$($G write-tree)
+if [ "$tree" = "$($G rev-parse "$parent^{tree}")" ]; then
+  echo "empty commit, refusing: $subject" >&2; exit 1
+fi
+# optional trailer(s), e.g. DOTFILES_COMMIT_TRAILER='Co-Authored-By: <model> <noreply@anthropic.com>' (use your session's attribution line)
+new=$({ printf '%s\n' "$subject"; [ -z "${DOTFILES_COMMIT_TRAILER:-}" ] || printf '\n%s\n' "$DOTFILES_COMMIT_TRAILER"; } | $G commit-tree "$tree" -p "$parent" -F -)
+$G update-ref -m "commit: $subject" "refs/heads/$branch" "$new" "$parent"
+$G --no-pager log -1 --stat --format='%h %an <%ae>%n  %s' "$new"

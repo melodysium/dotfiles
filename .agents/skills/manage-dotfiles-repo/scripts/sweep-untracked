@@ -1,0 +1,35 @@
+#!/bin/bash
+# List files/dirs under $HOME that look like dotfile candidates but are not yet decided.
+# "Decided" = tracked by yadm, OR matched by an ignore rule (incl. the machine-local exclude file).
+# So whatever this prints is exactly the set that still needs a decision: commit it, or add it to the
+# exclude file with a reason (see SKILL.md).
+#
+# Scope (yadm hides untracked files, and $HOME is huge, so only dotfile-ish places are swept):
+#   - every top-level dotfile/dotdir in $HOME
+#   - the direct children of the roots listed in SWEEP_ROOTS below
+# Add a root there when a new tool starts keeping hand-written config somewhere else.
+set -u
+shopt -s nullglob dotglob
+REPO="$HOME/.local/share/yadm/repo.git"
+G="git --git-dir=$REPO --work-tree=$HOME"
+SWEEP_ROOTS=(.config .local/bin .agents/skills .zfunc .claude)
+
+cd "$HOME" || exit 1
+candidates=()
+for p in .[!.]*; do candidates+=("$p"); done
+for root in "${SWEEP_ROOTS[@]}"; do
+  [ -d "$root" ] || continue
+  for p in "$root"/*; do candidates+=("$p"); done
+done
+
+for p in "${candidates[@]}"; do
+  [ -S "$p" ] && continue   # sockets can't be dotfiles
+  # tracked (the file itself, or anything inside the dir): already decided
+  [ -n "$($G ls-files -- "$p" | head -1)" ] && continue
+  # ignored by .gitignore / core.excludesFile / $REPO/info/exclude: already decided
+  $G check-ignore -q -- "$p" && continue
+  if [ -L "$p" ]; then kind="symlink -> $(readlink "$p")"
+  elif [ -d "$p" ]; then kind="dir ($(ls -A "$p" 2>/dev/null | wc -l | tr -d ' ') entries)"
+  else kind="file ($(wc -c < "$p" | tr -d ' ') B)"; fi
+  printf '%s\t%s\n' "$p" "$kind"
+done | sort
