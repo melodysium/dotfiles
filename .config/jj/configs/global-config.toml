@@ -43,7 +43,7 @@ concat(
 bookmark-advance-from = 'closest_bookmark_nontrunk(to)'
 
 [remotes.origin]
-auto-track-bookmarks = "*"
+# auto-track-bookmarks = "*" # 2026-10-21 commented out. i think i originally added this to try to make checking out teammates' branches easier, but i should be able to do that instead via using <branch-name>@origin. and it'd be nice if i onl had local bookmarks for my own branches, or remote ones i've checked out. i might also want to purge all my tracked bookmarks which are already merged, or dont have any changes with me as author
 
 [merge-tools.meld-3-emptybase]
 program = "meld-3-emptybase" # shell script in .local/bin
