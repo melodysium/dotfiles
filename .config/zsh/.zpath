@@ -57,8 +57,10 @@ export PATH="/usr/local/texlive/2025/bin/universal-darwin:$PATH"
 #eval "$(pyenv init -)"
 
 # 2026-02-27: switch to lazy-loading nvm via lazyload zsh plugin
+# 2026-10-22: adding markdownlint-cli2 so that it's always invokable
+# TODO: how to handle other globally-installed npm tools? just add them all here manually? is there any programmatic way to list those globally installed packages without invoking npm itself? currently markdownlint-cli2 is the only one I have / care about, so this doesn't need to be solved now...
 export NVM_DIR="$HOME/.nvm"
-lazyload nvm npm node -- 'source "$NVM_DIR/nvm.sh"'
+lazyload nvm npm node markdownlint-cli2 -- 'source "$NVM_DIR/nvm.sh"'
 
 # jenv
 local jenv_shims=(~/.jenv/shims/*(N:t))
