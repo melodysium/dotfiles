@@ -132,6 +132,12 @@ if ! jenv versions | grep "openjdk64-21" >/dev/null; then
 fi
 
 
+label_section "YADM GIT HOOKS"
+# the yadm repo uses a tracked hooks dir instead of the global one (core.hooksPath in ~/.gitconfig).
+# the pre-push hook only checks remotes marked public: `yadm gitconfig remote.<name>.public true`
+yadm gitconfig core.hooksPath "$HOME/.config/yadm/git-hooks"
+
+
 label_section "SOURCING .ZSHRC"
 # place anything requiring sourcing .zshrc in here
 source "$ZDOTDIR/.zshrc"
