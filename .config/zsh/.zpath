@@ -35,11 +35,6 @@ export PIPX_TRASH_DIR="$HOME/.local/pipx/.trash"
 # put python3 from homebrew in the path
 #export PATH="/opt/homebrew/opt/python@3.9/bin:$PATH"
 
-# use homebrew's coreutils instead of default ones
-#PATH="$(brew --prefix)/opt/coreutils/libexec/gnubin:$PATH"
-# Commenting out 2022-06-22 as nothing is broken for me rn
-# Context: https://bitbucket.org/inindca/relate-team-ops/pull-requests/71/no-jira-add-troubleshooting-page
-
 # custom git commands like git diff-commit
 export PATH="$PATH:$HOME/my-git-custom-commands"
 
