@@ -12,7 +12,7 @@ Read this when Melody wants her dotfiles changes sorted, committed, and pushed. 
 
 - **yadm is plain git here.** Use `yadm <git command>` for everything in this repo, including state-changing ones. This overrides the global "use `jj`" rule for this repo only (jj's commit-everything model doesn't suit a `$HOME` work tree; yadm's staged-on-request model does).
 - **Never switch branches in `$HOME`.** The work tree *is* `$HOME`: checking out another branch deletes every file only the old branch tracks (shell config, scripts), breaking live shells and tools mid-session. Make commits on other branches with `scripts/commit-to-branch`, or in a scratch `git worktree` outside `$HOME`.
-- **The public remote must never receive private details**: Melody's surname, her employer's internal names/hosts/URLs/ticket IDs, credentials. Section "Keep private details out" is mandatory before any push to it, and a `pre-push` hook enforces it mechanically (below). Don't bypass the hook (`SKIP_LEAK_SCAN`) without Melody's explicit say-so.
+- **The public remote must never receive private details**: Melody's surname, her employer's internal names/hosts/URLs/ticket IDs, credentials. Section "Keep private details out" is mandatory before any push to it, and a `pre-push` hook enforces it mechanically (below). The same hook also enforces **commit identity** (below). Don't bypass it (`SKIP_LEAK_SCAN`, `SKIP_IDENTITY_CHECK`) without Melody's explicit say-so.
 - **Push by explicit remote and branch.** Never `--all`, `--mirror`, `--tags`, or a multi-URL "push everywhere" remote (one such remote existed and was deleted: a single wrong push to it would have published the work branch publicly).
 - **Back up before rewriting history**: `yadm tag backup/<yyyy-mm-dd>-<branch> <branch>` for each branch you will move. Local tags only; never push them. Delete once she's happy.
 - **Check in rather than decide** on anything ambiguous: where a change belongs, whether something is private, whether to force-push.
@@ -28,7 +28,11 @@ yadm ls-remote --heads <remote>   # ground truth for what each remote has
 - **Branches:** `main` is the shared base. Every other branch is an *extension* of main for one context (work, personal). Extension branches are kept as small as possible and rebased onto `main`.
 - **Remotes:** each remote receives `main` plus its own extension branch(es), nothing else. The public remote gets `main` and the personal branch only. Which branch and remote are which (names, URLs) is private: see `~/.agents/AGENTS.local.md`. If it's not there, ask Melody.
 - **Config commands:** `yadm config` writes to yadm's own identity file (`~/.config/yadm/config`), which git hooks and plain `git` can't see. For real repo config (hooks path, remote flags) use **`yadm gitconfig`**.
-- **Identity:** commits use the public identity in `~/.config/yadm/config`, which yadm injects. Plain `git --git-dir=…` and plumbing commands do **not**, and would author commits with her global identity. Always check `git log --format='%an <%ae>'` on new commits.
+- **Identity is per branch.** `main`, and anything that goes to a public remote, must be authored **and** committed as the public identity (`melodysium <melodysium@gmail.com>`). A work branch may use its own identity. Mechanism: the repo config (`~/.local/share/yadm/repo.git/config`) sets `user.*` to the public identity, plus `[includeIf "onbranch:<branch>"] path = <file>` for a branch that needs another one (the file sits beside the repo config and holds a `[user]` section; both are machine-local and untracked, and which branch uses whose identity is private: see `~/.agents/AGENTS.local.md`).
+  - `yadm commit` on the **checked-out** branch picks the right identity up by itself.
+  - Scratch worktrees (their branch is `tmp-<branch>`, which doesn't match `onbranch:`), `git --git-dir=…` plumbing and rebases do **not**: set it with `eval "$(scripts/branch-identity --env <branch>)"`, naming the real branch. `scripts/commit-to-branch` does this for you.
+  - `~/.config/yadm/config` is **not** read by git or yadm when committing; don't rely on it for identity.
+  - Check new commits with `git log --format='%h %an <%ae> / %cn <%ce>'`. A rebase keeps authors but rewrites the committer to whatever identity is set. `scripts/identity-check` and the pre-push hook enforce the rule.
 
 ## Where a change belongs
 
@@ -78,7 +82,7 @@ git --git-dir=$HOME/.local/share/yadm/repo.git worktree add -b tmp-<branch> <scr
 cd <scratch>/wt-<branch> && git rebase main     # skip a commit that duplicates one already on main
 # copy files in from $HOME, then:  git add … && git commit …
 ```
-- Set the public identity (`GIT_AUTHOR_*` / `GIT_COMMITTER_*`). Git commands outside yadm don't get it automatically. (The global ticket-prefix `prepare-commit-msg` hook doesn't run here: this repo has its own tracked hooks dir, see below.)
+- Set the **branch's** identity in the shell that runs `git rebase` / `git commit`: `eval "$(~/.agents/skills/manage-dotfiles-repo/scripts/branch-identity --env <branch>)"`. It is the public one for most branches, but not for one that has its own (see "Identity is per branch"), and git won't pick it up in the worktree. (The global ticket-prefix `prepare-commit-msg` hook doesn't run here: this repo has its own tracked hooks dir, see below.)
 - A rebase conflict is information: read it. A commit duplicated across branches with different hashes usually conflicts; check whether main's copy is the intended one and `git rebase --skip`. (Once, an old unresolved conflict had been committed with `<<<<<<<` markers; grep the tree for markers after any rebase: `git grep -nE '^(<<<<<<<|>>>>>>>) ' HEAD`.)
 - When done, move the branch and sync the index without touching the work tree. In `$HOME`, with the extension branch checked out: `yadm reset <tmp-branch tip>` (mixed). Then `yadm status` should show only what you *meant* to leave uncommitted. Remove the worktree: `git worktree remove` and `git branch -D tmp-<branch>`.
 - If the work tree holds the **old** version of a file whose bad version you just replaced (like the marker case), restore it deliberately with `yadm checkout -- <file>` and tell Melody.
@@ -89,10 +93,10 @@ Before any push to the public remote, run the scan on every branch it will recei
 scripts/leak-scan main <personal-branch>                  # full history: surfaces pre-existing leaks too
 scripts/leak-scan --since <remote>/<branch> <branch>      # only what's about to be pushed
 ```
-The patterns live in `~/.config/yadm/leak-patterns` (private; exists only on the work branch). If it's missing, ask Melody for the patterns; don't guess. Also confirm authors with `git log --format='%h %an <%ae>' <remote>/<branch>..<branch>`. Any hit blocks the push until Melody decides: fix going forward, or rewrite history (her call; it changes every hash after the leak).
+The patterns live in `~/.config/yadm/leak-patterns` (private; exists only on the work branch). If it's missing, ask Melody for the patterns; don't guess. Also confirm identities: `scripts/identity-check --public --branch <branch> -- <remote>/<branch>..<branch>` (or eyeball `git log --format='%h %an <%ae> / %cn <%ce>' <remote>/<branch>..<branch>`). Any hit blocks the push until Melody decides: fix going forward, or rewrite history (her call; it changes every hash after the leak).
 
 ### 7. Push (checkpoint)
-The `pre-push` hook (`.config/yadm/git-hooks/pre-push`) re-runs `leak-scan` on exactly what is being sent, for any remote marked public, and fails closed if the patterns file is missing. It is the backstop for step 6, not a replacement: run the scan yourself first so problems surface before the push.
+The `pre-push` hook (`.config/yadm/git-hooks/pre-push`) re-runs `leak-scan` on exactly what is being sent, for any remote marked public, and fails closed if the patterns file is missing; for **every** remote it also runs `identity-check` on the commits being sent. It is the backstop for step 6, not a replacement: run the checks yourself first so problems surface before the push.
 Show the plan first: remote, branch, old → new hash, and whether it is a force push. Rebased branches need Melody's standing form:
 ```bash
 yadm push --force-with-lease --force-if-includes <remote> <branch>
@@ -102,16 +106,18 @@ yadm push --force-with-lease --force-if-includes <remote> <branch>
 ### 8. Wrap up
 Report what landed where (hashes, remotes), what's still uncommitted or undecided, and anything surprising. Mention the backup tags so she can delete them.
 
-## The pre-push hook (leak guard)
+## The pre-push hook (identity and leak guard)
 
-Shared in `main`, generic: `.config/yadm/git-hooks/pre-push` calls `scripts/leak-scan`; the private patterns come from `~/.config/yadm/leak-patterns` at run time (template: `.config/yadm/leak-patterns.example`). Per-machine setup, done once (the bootstrap script does the first line):
+Shared in `main`, generic: `.config/yadm/git-hooks/pre-push` calls two scripts. Per-machine setup, done once (the bootstrap script does the first line):
 
 ```bash
 yadm gitconfig core.hooksPath ~/.config/yadm/git-hooks   # repo-local; overrides the global core.hooksPath
-yadm gitconfig remote.<public-remote>.public true        # only remotes marked public are scanned
+yadm gitconfig remote.<public-remote>.public true        # only remotes marked public are leak-scanned
 ```
 
-- Remotes not marked public are never scanned, so the work branch can go to the internal remote.
+- **`scripts/identity-check`, every remote.** The commits being sent (author *and* committer) must use the identity their branch requires: `main`, and anything sent to a public remote, must be the public identity, which is written into the script, so **every clone enforces it, with no private file needed**; a branch the repo config maps to its own identity must use that one (commits already on `main` are excluded; they're checked when `main` is pushed); other branches have no rule. It *requires* the right identity, where `leak-scan` only *rejects* private patterns, so it also catches an identity that no pattern names.
+- **`scripts/leak-scan`, public remotes only.** The private patterns come from `~/.config/yadm/leak-patterns` at run time (template: `.config/yadm/leak-patterns.example`).
+- Remotes not marked public are never leak-scanned, so the work branch can go to the internal remote.
 - When testing it, **never test against the real public remote.** Make a throwaway bare repo, add it as a remote, mark it public, and push there: a private-content push must be blocked and a clean one must pass.
 - A hook that silently isn't running is the failure mode to rule out: this repo once had the hook linked into `repo.git/hooks/` while the global `core.hooksPath` pointed elsewhere, so it never ran, and keys set with `yadm config` weren't visible to it.
 
@@ -134,6 +140,8 @@ yadm gitconfig remote.<public-remote>.public true        # only remotes marked p
 
 ## Scripts
 
-- `scripts/commit-to-branch <branch> "<subject>" <path | path=blobsha>...`: commit to a branch that isn't checked out, using a throwaway index. Uses the public identity and refuses if it matches a leak pattern.
+- `scripts/commit-to-branch <branch> "<subject>" <path | path=blobsha>...`: commit to a branch that isn't checked out, using a throwaway index. Uses the branch's identity (`branch-identity`); when that is the public one, it refuses if it matches a leak pattern.
+- `scripts/branch-identity [--env | --strict | --public] <branch>`: print the identity a branch's commits must use (`--env`: shell exports for the `GIT_*` variables). The public identity unless the repo config maps the branch elsewhere.
+- `scripts/identity-check [--public] --branch <name> -- <rev-list args>`: verify author and committer of a commit range against the branch's required identity. Run by the pre-push hook; also handy before a rebased push.
 - `scripts/leak-scan [--since <rev>] <ref>...`: scan file contents, paths, authors, messages, and diffs for private patterns.
 - `scripts/sweep-untracked`: list untracked, un-excluded dotfile candidates. Edit `SWEEP_ROOTS` in it when a new tool starts keeping hand-written config somewhere new.
