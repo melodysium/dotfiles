@@ -210,13 +210,45 @@ AI-drafted investigation summary), update line 2 to reflect the increased human
 involvement rather than leaving the original value stale. When in doubt about
 whether the change is significant enough to bump the category, ask.
 
+Line 1 can change too. After heavily editing the AI-drafted PR description, Melody
+changed line 1 from `🤖 AI-generated` to `🤖+🧑 AI-generated, human edited`
+(PR 568, 2026-11-04). If you later re-post or update text she has already edited,
+keep her version of the header; if she asks you to update the text after her
+edits, use that "AI-generated, human edited" wording rather than resetting it to
+`🤖 AI-generated`.
+
+**Before editing any text that already has a header, fetch its current state first**,
+even if you posted it moments ago. Header lines have been wiped or reset by later AI
+edits (e.g. a description rewrite following `change-description-style`) that worked from
+a stale copy. Edit from the fetched text, carry the header over verbatim (including
+Melody's hand edits and the usage line), and fetch it back afterwards to confirm it
+survived. This is also why the usage line is a first-post snapshot: leave it as posted.
+
 ## Placement
 
-The disclosure (both lines, or the single collaboration line) goes at the very
-top of the text body, before the summary, ticket description, comment content,
-or any other content. In the two-line form there's no blank line between the
-lines. Always put a horizontal line directly below the disclosure, then the rest
-of the text, so readers can see where the disclosure ends and the content begins.
+The disclosure (all its lines, or the single collaboration line plus any usage line)
+goes at the very top of the text body, before the summary, ticket description, comment
+content, or any other content. There's no *blank* line between the disclosure lines,
+but they must still render on **separate lines**: Markdown joins adjacent
+lines into one paragraph, which showed up as a single run-on line in a PR
+description that Melody had to break by hand (PR 568, 2026-11-04). Always put a
+horizontal line directly below the disclosure, then the rest of the text, so
+readers can see where the disclosure ends and the content begins.
+
+**Keep the two lines on separate lines, per surface:**
+
+- **Markdown surfaces** (Bitbucket / GitHub PR descriptions and comments, Markdown
+  wiki pages): end every disclosure line except the last with **two trailing
+  spaces** (a Markdown hard line break). That's the form Melody uses herself, and
+  Bitbucket kept it through her edit. A trailing backslash or `<br>` also works
+  on some renderers, but prefer the two spaces. Make sure the text you send
+  really keeps the trailing spaces (don't let a formatter or your own tidying
+  strip them).
+- **Rich-text editors** (Jira / Confluence via ADF or storage format): put each
+  disclosure statement in its own paragraph or separated by a line-break element.
+- **Plain text:** a newline is enough.
+- After posting, fetch the text back once and confirm the lines are still separate.
+  If the surface collapsed them, fix it instead of leaving it for Melody.
 
 Pick the horizontal line by what the surface supports, in this order:
 
@@ -228,8 +260,8 @@ Pick the horizontal line by what the surface supports, in this order:
    disclosure into a setext heading):
 
 ```
-PR summary: 🤖 AI-generated
-PR changes: 🤖+🧑 AI + human collaboration, full human self-review
+PR summary: 🤖 AI-generated  
+PR changes: 🤖+🧑 AI + human collaboration, full human self-review  
 usage: Sonnet 5.5 · Claude Code · ~1.7M tokens (1.6M cache reads, 70k new input, 18k output) · ~$0.62 est.
 
 ---
@@ -238,8 +270,8 @@ usage: Sonnet 5.5 · Claude Code · ~1.7M tokens (1.6M cache reads, 70k new inpu
 ```
 
 ```
-Ticket description: 🤖 AI-generated
-Underlying work: 🤖+🧑 AI + human collaboration, full human self-review
+Ticket description: 🤖 AI-generated  
+Underlying work: 🤖+🧑 AI + human collaboration, full human self-review  
 usage: Opus 5.5 + Sonnet 5.5 · Claude Code · ~6.2M tokens (6.0M cache reads, 246k new input, 36k output) across 1 subagent · ~$3.25 est.
 
 ---
@@ -248,7 +280,7 @@ usage: Opus 5.5 + Sonnet 5.5 · Claude Code · ~6.2M tokens (6.0M cache reads, 2
 ```
 
 ```
-AI disclaimer: 🤖+🧑 AI + human collaboration, full human review and editing before posting
+AI disclaimer: 🤖+🧑 AI + human collaboration, full human review and editing before posting  
 usage: Sonnet 5.5 · Claude Code · ~918k tokens (806k cache reads, 104k new input, 8k output) · ~$0.58 est.
 
 ---
@@ -257,8 +289,8 @@ usage: Sonnet 5.5 · Claude Code · ~918k tokens (806k cache reads, 104k new inp
 ```
 
 ```
-comment: 🤖 AI-generated
-changes: 🤖 AI-written, only human reviewed via LLM reasoning
+comment: 🤖 AI-generated  
+changes: 🤖 AI-written, only human reviewed via LLM reasoning  
 usage: Sonnet 5.5 · Claude Code · ~918k tokens (806k cache reads, 104k new input, 8k output) · ~$0.58 est.
 
 ---
