@@ -10,7 +10,7 @@ export PATH="$PATH:$HOME/.docker/bin"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 
-export PROFILE_LOCAL=".profile.local"
+export PROFILE_LOCAL="$HOME/.profile.local"
 if [[ -f "$PROFILE_LOCAL" ]]; then
   source "$PROFILE_LOCAL"
 fi

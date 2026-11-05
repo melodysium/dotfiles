@@ -12,7 +12,7 @@ eval "$(/opt/homebrew/bin/brew shellenv)"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 
-export BASHRC_LOCAL=".bashrc.local"
+export BASHRC_LOCAL="$HOME/.bashrc.local"
 if [[ -f "$BASHRC_LOCAL" ]]; then
   source "$BASHRC_LOCAL"
 fi

@@ -7,7 +7,7 @@ export PATH="$PATH:$HOME/.docker/bin"
 . "$HOME/.cargo/env"
 . "$HOME/.local/bin/env"
 
-export BASH_PROFILE_LOCAL=".bash_profile.local"
+export BASH_PROFILE_LOCAL="$HOME/.bash_profile.local"
 if [[ -f "$BASH_PROFILE_LOCAL" ]]; then
   source "$BASH_PROFILE_LOCAL"
 fi
