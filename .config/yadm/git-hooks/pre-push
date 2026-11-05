@@ -1,46 +1,64 @@
 #!/bin/bash
-# Git pre-push hook for the yadm dotfiles repo itself: refuse to push anything containing private
-# details to a remote that has been marked PUBLIC.
+# Git pre-push hook for the yadm dotfiles repo itself. Two guards:
 #
-# How it works: for each ref being pushed, it runs leak-scan (file contents, paths, authors, commit
-# messages, and added diff lines) over the commits that would be new on the remote, plus the full tree.
-# The patterns come from ~/.config/yadm/leak-patterns, a private file that never goes on a public
-# branch (see leak-patterns.example). Remotes not marked public are not checked.
+# 1. IDENTITY (every remote): the commits being pushed must use the identity their branch requires:
+#    `main` and anything pushed to a PUBLIC remote must be authored AND committed as melodysium; a branch the
+#    repo config maps to its own identity (see scripts/branch-identity) must use that one. Runs identity-check.
+# 2. LEAKS (PUBLIC remotes only): refuse to push private details. For each ref it runs leak-scan (file
+#    contents, paths, authors, commit messages, added diff lines) over the commits that would be new on the
+#    remote, plus the full tree. The patterns come from ~/.config/yadm/leak-patterns, a private file that
+#    never goes on a public branch (see leak-patterns.example).
 #
 # Setup (done by .config/yadm/bootstrap; this repo-local setting overrides the global core.hooksPath):
 #   yadm gitconfig core.hooksPath ~/.config/yadm/git-hooks
 # Mark a remote public (once per machine; note `yadm gitconfig`, not `yadm config`, which writes to
 # yadm's own identity file that hooks can't see):
 #   yadm gitconfig remote.<name>.public true
-# Fails closed: a public remote with no patterns file blocks the push. Bypass, knowingly, with:
-#   SKIP_LEAK_SCAN=1 yadm push ...
+# Fails closed: a public remote with a missing script or patterns file blocks the push. Bypass, knowingly, with
+#   SKIP_IDENTITY_CHECK=1 yadm push ...      or      SKIP_LEAK_SCAN=1 yadm push ...
 # Workflow and rationale: ~/.agents/skills/manage-dotfiles-repo/SKILL.md
 
 remote=$1
-[ "$(git config --get --type=bool "remote.$remote.public" 2>/dev/null)" = "true" ] || exit 0
+scripts="$HOME/.agents/skills/manage-dotfiles-repo/scripts"
+check="$scripts/identity-check"
+scan="$scripts/leak-scan"
+public=0
+[ "$(git config --get --type=bool "remote.$remote.public" 2>/dev/null)" = "true" ] && public=1
 
-if [ -n "${SKIP_LEAK_SCAN:-}" ]; then
+if [ -n "${SKIP_LEAK_SCAN:-}" ] && [ $public -eq 1 ]; then
   echo "pre-push: SKIP_LEAK_SCAN set; NOT scanning the push to public remote '$remote'" >&2
-  exit 0
 fi
-
-scan="$HOME/.agents/skills/manage-dotfiles-repo/scripts/leak-scan"
-if [ ! -x "$scan" ]; then
-  echo "pre-push: '$remote' is public but $scan is missing; refusing to push" >&2
-  exit 1
+if [ -n "${SKIP_IDENTITY_CHECK:-}" ]; then
+  echo "pre-push: SKIP_IDENTITY_CHECK set; NOT checking commit identities for '$remote'" >&2
+fi
+if [ $public -eq 1 ]; then
+  [ -n "${SKIP_LEAK_SCAN:-}" ] || [ -x "$scan" ] || { echo "pre-push: '$remote' is public but $scan is missing; refusing to push" >&2; exit 1; }
+  [ -n "${SKIP_IDENTITY_CHECK:-}" ] || [ -x "$check" ] || { echo "pre-push: '$remote' is public but $check is missing; refusing to push" >&2; exit 1; }
 fi
 
 zero=0000000000000000000000000000000000000000
 status=0
 while read -r local_ref local_sha remote_ref remote_sha; do
   [ "$local_sha" = "$zero" ] && continue   # deleting a remote ref sends no content
-  args=()
-  # only the commits the remote doesn't have yet (if we have its tip locally); otherwise scan everything
-  if [ "$remote_sha" != "$zero" ] && git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
-    args=(--since "$remote_sha")
+  known=0
+  # only the commits the remote doesn't have yet (if we have its tip locally); otherwise everything not on its tracking refs
+  [ "$remote_sha" != "$zero" ] && git cat-file -e "$remote_sha^{commit}" 2>/dev/null && known=1
+
+  case $local_ref in
+    refs/heads/*)
+      if [ -z "${SKIP_IDENTITY_CHECK:-}" ] && [ -x "$check" ]; then
+        pub=(); [ $public -eq 1 ] && pub=(--public)
+        if [ $known -eq 1 ]; then range=("$remote_sha..$local_sha"); else range=("$local_sha" --not "--remotes=$remote"); fi
+        "$check" ${pub[@]+"${pub[@]}"} --branch "${local_ref#refs/heads/}" -- "${range[@]}" >&2 || status=1
+      fi;;
+  esac
+
+  if [ $public -eq 1 ] && [ -z "${SKIP_LEAK_SCAN:-}" ]; then
+    args=()
+    [ $known -eq 1 ] && args=(--since "$remote_sha")
+    echo "pre-push: leak-scan of $local_ref for public remote '$remote'" >&2
+    "$scan" ${args[@]+"${args[@]}"} "$local_sha" >&2 || status=1
   fi
-  echo "pre-push: leak-scan of $local_ref for public remote '$remote'" >&2
-  "$scan" "${args[@]}" "$local_sha" >&2 || status=1
 done
 
 if [ $status -ne 0 ]; then
