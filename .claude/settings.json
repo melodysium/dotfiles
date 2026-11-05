@@ -35,7 +35,12 @@
       "Bash(jj git init*)",
       "Bash(python3 -m py_compile *)",
       "Bash(mvn*)",
-      "Edit(~/.claude/skills/**)"
+      "Edit(~/.claude/skills/**)",
+      "Edit(~/.agents/skills/**)"
+    ],
+    "additionalDirectories": [
+      "~/.agents/skills",
+      "~/.claude/skills"
     ]
   },
   "hooks": {
