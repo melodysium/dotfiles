@@ -1,0 +1,47 @@
+#!/bin/bash
+# Which git identity must commits on a branch of the yadm dotfiles repo use?
+#
+# usage: branch-identity [--env | --strict | --public] <branch>
+#   (default)  print "<name><TAB><email>"
+#   --env      print `export GIT_AUTHOR_*` / `GIT_COMMITTER_*` lines, for `eval "$(branch-identity --env <branch>)"`
+#   --strict   like default, but exit 3 (printing nothing) when the branch has no branch-specific identity
+#   --public   ignore the branch and print the public identity
+#
+# Rule: the PUBLIC identity below, unless the repo-local config maps the branch to another identity:
+#     [includeIf "onbranch:<pattern>"]
+#         path = <file>          # relative to the repo config; the file holds a [user] section
+# That mapping is machine-local and untracked, so this script never contains a private identity.
+# `yadm commit` applies the same mapping to the checked-out branch. Scratch worktrees (tmp-* branches)
+# and plumbing do not, which is why scripts and agents ask here instead of trusting git's own lookup.
+set -eu
+PUBLIC_NAME=melodysium
+PUBLIC_EMAIL=melodysium@gmail.com
+GD="$HOME/.local/share/yadm/repo.git"
+
+mode=default
+case "${1:-}" in --env|--strict|--public) mode=${1#--}; shift;; esac
+[ "$mode" = public ] || [ $# -eq 1 ] || { echo "usage: branch-identity [--env|--strict|--public] <branch>" >&2; exit 2; }
+branch=${1:-}
+
+name=$PUBLIC_NAME; email=$PUBLIC_EMAIL; mapped=0
+if [ "$mode" != public ]; then
+  while read -r key path; do
+    pat=${key#includeif.onbranch:}; pat=${pat%.path}
+    case $pat in */) pat="$pat**";; esac
+    # shellcheck disable=SC2254  # $pat is deliberately a glob, like git's onbranch: condition
+    case $branch in $pat) ;; *) continue;; esac
+    case $path in "~/"*) f="$HOME/${path#\~/}";; /*) f=$path;; *) f="$GD/$path";; esac
+    n=$(git config --file "$f" user.name 2>/dev/null || true)
+    e=$(git config --file "$f" user.email 2>/dev/null || true)
+    [ -n "$n" ] && [ -n "$e" ] || { echo "branch-identity: '$branch' maps to $f but it has no user.name/user.email" >&2; exit 1; }
+    name=$n; email=$e; mapped=1; break
+  done < <(git config --file "$GD/config" --get-regexp '^includeif\.onbranch:.*\.path$' 2>/dev/null || true)
+fi
+
+if [ "$mode" = strict ] && [ $mapped -eq 0 ]; then exit 3; fi
+if [ "$mode" = env ]; then
+  printf 'export GIT_AUTHOR_NAME=%q GIT_AUTHOR_EMAIL=%q GIT_COMMITTER_NAME=%q GIT_COMMITTER_EMAIL=%q\n' \
+    "$name" "$email" "$name" "$email"
+else
+  printf '%s\t%s\n' "$name" "$email"
+fi
