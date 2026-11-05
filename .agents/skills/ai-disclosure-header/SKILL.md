@@ -55,6 +55,13 @@ matches the surface:
 | Work ticket comment | `Ticket comment` |
 | Wiki page | `Page content` |
 
+**Short labels for small comments (2026-11-04, Melody).** For brevity in smaller
+communications like PR comments, shorten both labels: line 1 becomes
+`comment: 🤖 AI-generated` and line 2 becomes `changes: <value>` (instead of
+`PR comment:` / `Underlying work:`). Melody rewrote her PR 404 reply header this way.
+It probably applies to other comment surfaces too (ticket comments); confirm with her
+the first time. PR descriptions and other long-form text keep the full labels above.
+
 ## Line 2: reflects human involvement in the underlying *work*, not the text
 
 ```
@@ -234,3 +241,16 @@ usage: Sonnet 5.5 · Claude Code · ~918k tokens (806k cache reads, 104k new inp
 
 <rest of the comment>
 ```
+
+```
+comment: 🤖 AI-generated
+changes: 🤖 AI-written, only human reviewed via LLM reasoning
+usage: Sonnet 5.5 · Claude Code · ~918k tokens (806k cache reads, 104k new input, 8k output) · ~$0.58 est.
+
+---
+
+<rest of a short PR comment>
+```
+
+(Examples show the usage line, which is skipped when the change's main body already
+reports it; see "Line 3".)
