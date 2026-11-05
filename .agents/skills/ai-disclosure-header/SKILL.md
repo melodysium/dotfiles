@@ -78,7 +78,9 @@ separate question from who wrote the text describing it. Pick exactly one:
 | Situation | Value |
 |---|---|
 | AI did the work with little human oversight | `🤖 AI, minimal human oversight` |
-| Human operator actively collaborated on and reviewed the work | `🤖+🧑 AI + human collaboration, full human self-review` |
+| Human operator actively collaborated on **and reviewed the work itself** (the diff, the results, the sources) | `🤖+🧑 AI + human collaboration, full human self-review` |
+| Human reviewed only part of the work themselves (e.g. skimmed the key files) | `🤖+🧑 AI + human collaboration, some human self-review (<what they looked at>)`, e.g. `(only skimming SKILL.md and script)` |
+| Human only saw the agent's output or explanation and judged from that, without reviewing the work itself | `🤖 AI-written, only human reviewed via LLM reasoning` |
 | Work is mostly human-done; AI only reviewed or made small contributions | `🧑 human, minimal AI modification` |
 
 This line applies whenever the text describes work that happened, which in
@@ -174,6 +176,18 @@ this category from session activity alone unless it's unambiguous.
 - If the session context makes it obvious (for example, Melody explicitly said
   "I wrote this, just fix the typo" or the entire work was done autonomously
   with no back-and-forth), use that.
+- **Agreeing with the agent's plan or explanation in chat is not reviewing the work.**
+  Learning (2026-11-04, Melody): this agent labelled a PR comment
+  `full human self-review` because Melody had collaborated on the task and approved its
+  reasoning. She corrected it to `🤖 AI-written, only human reviewed via LLM reasoning`,
+  because she had judged only from the agent's output and had not looked at the diff or
+  results herself. Use `full human self-review` only when she has actually examined the
+  work, or tells you she has. If all she has seen is your summary, use the AI-written
+  value or ask. Being collaborative in chat is not a reason to upgrade the label.
+  If she reviewed only part of it, say which part in parentheses: for PR 404
+  (2026-11-05) she changed line 2 to
+  `🤖+🧑 AI + human collaboration, some human self-review (only skimming SKILL.md and script)`
+  and was fine leaving it that way. Keep her wording if you later touch that text.
 - Otherwise, ask directly before finalizing the text — a quick question like
   "How would you categorize the human involvement here: mostly-autonomous AI,
   active collaboration with your review, or mostly your own work?" is enough.
