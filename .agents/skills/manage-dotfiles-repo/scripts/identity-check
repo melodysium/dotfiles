@@ -1,0 +1,54 @@
+#!/bin/bash
+# Verify the author AND committer of commits about to be pushed from the yadm dotfiles repo.
+#
+# usage: identity-check [--public] --branch <name> -- <rev-list args>
+#   identity-check --branch main -- 829dc1f..47aa0aa
+#   identity-check --public --branch personal -- 5d43546 --not --remotes=github-public
+#
+# Which identity is required (see branch-identity for the lookup):
+#   --public   the target remote is public: every commit must use the PUBLIC identity (melodysium)
+#   `main`     the shared base: public identity, whatever the remote
+#   a branch with a branch-specific identity: that identity, for commits not already on main
+#              (main's own commits are checked when main is pushed)
+#   any other branch: no rule, nothing is checked
+#
+# Complements leak-scan, which only *rejects* private patterns in public pushes; this one requires the
+# right identity positively, so a clone without the private patterns file still can't push a stray identity.
+# Exit status: 0 = ok (or no rule), 1 = mismatch or error.
+D=$(cd "$(dirname "$0")" && pwd)
+G="git --git-dir=$HOME/.local/share/yadm/repo.git"
+public=0; branch=""
+while [ $# -gt 0 ]; do
+  case $1 in
+    --public) public=1; shift;;
+    --branch) branch=${2:-}; shift 2;;
+    --) shift; break;;
+    *) break;;
+  esac
+done
+[ -n "$branch" ] && [ $# -gt 0 ] || { echo "usage: identity-check [--public] --branch <name> -- <rev-list args>" >&2; exit 1; }
+
+extra=()
+if [ $public -eq 1 ] || [ "$branch" = main ]; then
+  want=$("$D/branch-identity" --public) || exit 1
+elif want=$("$D/branch-identity" --strict "$branch"); then
+  extra=(^refs/heads/main)
+else
+  rc=$?
+  [ $rc -eq 3 ] && { echo "identity-check: no identity rule for '$branch'; skipped"; exit 0; }
+  exit 1
+fi
+want_name=${want%%$'\t'*}; want_email=${want#*$'\t'}
+
+log=$($G log --format='%h%x1f%an%x1f%ae%x1f%cn%x1f%ce%x1f%s' ${extra[@]+"${extra[@]}"} "$@" --) || {
+  echo "identity-check: could not list commits for '$branch'; refusing" >&2; exit 1; }
+bad=$(printf '%s\n' "$log" | awk -F'\037' -v n="$want_name" -v e="$want_email" \
+  'NF && ($2!=n || $3!=e || $4!=n || $5!=e) {printf "  %s  author %s <%s>, committer %s <%s>  %s\n", $1, $2, $3, $4, $5, $6}')
+if [ -n "$bad" ]; then
+  total=$(printf '%s\n' "$bad" | wc -l | tr -d ' ')
+  echo "identity-check: $total commit(s) on '$branch' do not use $want_name <$want_email> (author and committer):" >&2
+  printf '%s\n' "$bad" | head -20 >&2
+  exit 1
+fi
+count=$(printf '%s\n' "$log" | grep -c .)
+echo "identity-check: $branch: $count commit(s) use $want_name <$want_email>"
