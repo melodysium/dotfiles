@@ -137,6 +137,13 @@ label_section "YADM GIT HOOKS"
 # the pre-push hook only checks remotes marked public: `yadm gitconfig remote.<name>.public true`
 yadm gitconfig core.hooksPath "$HOME/.config/yadm/git-hooks"
 
+# the public identity is this repo's default, so a plain `yadm commit` never uses the global one.
+# a branch that needs another identity gets it from an `[includeIf "onbranch:<branch>"]` in the repo config;
+# that must come AFTER these keys (later wins), so keep it in a work-branch-only bootstrap.local.
+# see "Identity is per branch" in ~/.agents/skills/manage-dotfiles-repo/SKILL.md
+yadm gitconfig user.name melodysium
+yadm gitconfig user.email melodysium@gmail.com
+
 
 label_section "SOURCING .ZSHRC"
 # place anything requiring sourcing .zshrc in here
