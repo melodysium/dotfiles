@@ -170,7 +170,7 @@ if [[ -f "$LOCAL_BREWFILE" ]]; then
   brew bundle check --file="$LOCAL_BREWFILE" >/dev/null || brew bundle install --file="$LOCAL_BREWFILE"
 fi
 
-export LOCAL_BOOTSTRAP="~/.config/yadm/bootstrap.local"
+export LOCAL_BOOTSTRAP="$HOME/.config/yadm/bootstrap.local"
 if [[ -f "$LOCAL_BOOTSTRAP" ]]; then
   label_section "LOCAL BOOTSTRAP"
   source "$LOCAL_BOOTSTRAP"
