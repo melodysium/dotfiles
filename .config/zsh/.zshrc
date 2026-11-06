@@ -36,7 +36,7 @@ if [[ "$TERM_PROGRAM" == "kiro" ]]; then
   export PAGER=cat
 elif [[ "$CURSOR_AGENT" == 1 ]]; then
   export PAGER=cat
-elif [[ "$CLAUDECODE" == 1 ]]; then
+elif [[ "$CLAUDECODE" == 1 || "$TERM_PROGRAM" == "claude-desktop" ]]; then
   export PAGER=cat
 else
   # Human shell
