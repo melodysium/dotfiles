@@ -148,6 +148,6 @@ Order matters: git reads the config top to bottom and the last value wins, so th
 
 - `scripts/commit-to-branch <branch> "<subject>" <path | path=blobsha>...`: commit to a branch that isn't checked out, using a throwaway index. Uses the branch's identity (`branch-identity`); when that is the public one, it refuses if it matches a leak pattern.
 - `scripts/branch-identity [--env | --strict | --public] <branch>`: print the identity a branch's commits must use (`--env`: shell exports for the `GIT_*` variables). The public identity unless the repo config maps the branch elsewhere.
-- `scripts/identity-check [--public] --branch <name> -- <rev-list args>`: verify author and committer of a commit range against the branch's required identity. Run by the pre-push hook; also handy before a rebased push.
+- `scripts/identity-check [--public] --branch <name> -- <rev-list args>`: verify author and committer of a commit range against the branch's required identity. Run by the pre-push hook; also handy before a rebased push. It reads the yadm git-dir, so `HEAD` or a branch name means *that* repo's, not a scratch worktree's: pass SHAs when checking a worktree's commits.
 - `scripts/leak-scan [--since <rev>] <ref>...`: scan file contents, paths, authors, messages, and diffs for private patterns.
 - `scripts/sweep-untracked`: list untracked, un-excluded dotfile candidates. Edit `SWEEP_ROOTS` in it when a new tool starts keeping hand-written config somewhere new.
