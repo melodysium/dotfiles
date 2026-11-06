@@ -107,6 +107,18 @@ yadm push --force-with-lease --force-if-includes <remote> <branch>
 ### 8. Wrap up
 Report what landed where (hashes, remotes), what's still uncommitted or undecided, and anything surprising. Mention the backup tags so she can delete them.
 
+## Rewriting history (only with Melody's go-ahead)
+
+For removing a leak that is already pushed, or fixing authorship. It changes every hash after the first touched commit and needs a force-push to every remote that has the branch. Never rewrite in `$HOME` or against a real remote first: do it in a scratch clone, verify, then move refs.
+
+1. **Back up**: `yadm tag backup/<date>-<branch> <branch>` for each branch you will move (local only).
+2. **Scratch clone**: `git clone --no-hardlinks file://$HOME/.local/share/yadm/repo.git <scratch>/rewrite`, then a local branch for each one you will rewrite (a clone checks out only one).
+3. **Rewrite every affected branch in one `git filter-branch` call**, so they share the new commits (`FILTER_BRANCH_SQUELCH_WARNING=1`). Use `--index-filter` for content (swap the blob with `git update-index --cacheinfo`; there's no work tree to touch) or `--env-filter` for identity (dates are kept). Give it an explicit range such as `<main-tip>..<branch>` to leave the commits below untouched. A removed line still inside a later commit's diff just becomes a smaller diff there.
+4. **Import under a holding namespace and verify before moving anything**: `yadm fetch <scratch>/rewrite '+refs/heads/<b>:refs/rewrite/<b>'`. Check that commit counts match; each changed commit's diff to its old self is only what you intended (`git diff --numstat old new`); tip trees are unchanged (or changed as intended); authors, committers, dates and subjects are equal unless identity was the point; `leak-scan` and `identity-check` pass on the new refs. Confirm each check really ran, using a positive control.
+5. **Move refs with compare-and-swap**: `yadm update-ref refs/heads/<b> <new> <old>`. The checked-out branch needs nothing else if its tree is unchanged, otherwise a mixed `yadm reset`. Delete the `refs/rewrite/*` holding refs.
+6. **Rebase extension branches onto the new `main`** (unless step 3 already covered them), re-run the checks, show the push plan, then force-push each branch to each remote that has it. GitHub keeps old commits reachable by SHA until it garbage-collects them; say so.
+7. **Other clones**: a rewritten branch can't be pulled normally. On each other machine, fetch, then reset the branch to the remote's (only after saving any local commits, e.g. as a patch), or re-clone. Local commits made on the old history must be replayed onto the new one (`git cherry-pick`).
+
 ## The pre-push hook (identity and leak guard)
 
 Shared in `main`, generic: `.config/yadm/git-hooks/pre-push` calls two scripts. Per-machine setup, done once (the bootstrap script does the hooks path and the public identity):
