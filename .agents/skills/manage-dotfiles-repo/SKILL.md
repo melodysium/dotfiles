@@ -16,6 +16,7 @@ Read this when Melody wants her dotfiles changes sorted, committed, and pushed. 
 - **Push by explicit remote and branch.** Never `--all`, `--mirror`, `--tags`, or a multi-URL "push everywhere" remote (one such remote existed and was deleted: a single wrong push to it would have published the work branch publicly).
 - **Back up before rewriting history**: `yadm tag backup/<yyyy-mm-dd>-<branch> <branch>` for each branch you will move. Local tags only; never push them. Delete once she's happy.
 - **Check in rather than decide** on anything ambiguous: where a change belongs, whether something is private, whether to force-push.
+- **The scripts are bash; the interactive shell is zsh, which doesn't word-split variables.** `G="git --git-dir=…"; $G log` fails there ("no such file or directory"), so write the command out or use a function. Then confirm a check really ran: an empty result from a broken command looks exactly like "clean".
 
 ## What to verify first (don't assume)
 
