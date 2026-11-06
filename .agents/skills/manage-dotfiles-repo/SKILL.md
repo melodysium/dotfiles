@@ -108,12 +108,18 @@ Report what landed where (hashes, remotes), what's still uncommitted or undecide
 
 ## The pre-push hook (identity and leak guard)
 
-Shared in `main`, generic: `.config/yadm/git-hooks/pre-push` calls two scripts. Per-machine setup, done once (the bootstrap script does the first line):
+Shared in `main`, generic: `.config/yadm/git-hooks/pre-push` calls two scripts. Per-machine setup, done once (the bootstrap script does the hooks path and the public identity):
 
 ```bash
 yadm gitconfig core.hooksPath ~/.config/yadm/git-hooks   # repo-local; overrides the global core.hooksPath
 yadm gitconfig remote.<public-remote>.public true        # only remotes marked public are leak-scanned
+yadm gitconfig user.name  <public name>                  # the public identity is this repo's default...
+yadm gitconfig user.email <public email>                 # ...so a plain `yadm commit` never uses the global one
+# only for a branch that needs its own identity (which one: ~/.agents/AGENTS.local.md); run AFTER the user.* keys:
+yadm gitconfig 'includeIf.onbranch:<branch>.path' config-<branch>   # file beside the repo config, with a [user] section
 ```
+
+Order matters: git reads the config top to bottom and the last value wins, so the `includeIf` section must come after `[user]`. Re-setting `user.*` later keeps its place, so re-running bootstrap is safe. Without this setup a fresh clone commits with the global identity, and only the pre-push check notices.
 
 - **`scripts/identity-check`, every remote.** The commits being sent (author *and* committer) must use the identity their branch requires: `main`, and anything sent to a public remote, must be the public identity, which is written into the script, so **every clone enforces it, with no private file needed**; a branch the repo config maps to its own identity must use that one (commits already on `main` are excluded; they're checked when `main` is pushed); other branches have no rule. It *requires* the right identity, where `leak-scan` only *rejects* private patterns, so it also catches an identity that no pattern names.
 - **`scripts/leak-scan`, public remotes only.** The private patterns come from `~/.config/yadm/leak-patterns` at run time (template: `.config/yadm/leak-patterns.example`).
